@@ -2,47 +2,41 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Welcome to DemoTaskEarners</title>
+  <title>DemoTaskEarners - Earn from Telegram</title>
   <style>
     body {
-      font-family: Arial;
+      font-family: sans-serif;
       text-align: center;
       padding: 30px;
-      background: #f8f8f8;
+      background: #f9f9f9;
     }
-    pre {
-      background: #eee;
-      padding: 15px;
-      text-align: left;
-      display: inline-block;
-      border-radius: 10px;
+    .card {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 0 12px rgba(0, 0, 0, 0.1);
+      max-width: 500px;
+      margin: auto;
+    }
+    img {
+      width: 50px;
+      vertical-align: middle;
+    }
+    a {
+      text-decoration: none;
+      color: #0088cc;
     }
   </style>
 </head>
 <body>
-  <h1>Welcome to DemoTaskEarners</h1>
-  <p>Your IP info:</p>
-  <pre id="output">Loading...</pre>
-
-  <script>
-    fetch("https://api.ipify.org/?format=json")
-      .then(res => res.json())
-      .then(ipData => {
-        fetch(`/api/ip?ip=${ipData.ip}`)
-          .then(res => res.json())
-          .then(scoreData => {
-            document.getElementById("output").textContent = JSON.stringify({
-              ip: ipData.query,
-              country: ipData.country,
-              city: ipData.city,
-              isp: ipData.isp,
-              ...scoreData
-            }, null, 2);
-          });
-      })
-      .catch(err => {
-        document.getElementById("output").textContent = "Error loading IP info.";
-      });
-  </script>
+  <div class="card">
+    <h1>Welcome to DemoTaskEarners</h1>
+    <p>You can earn money by performing simple tasks in our Telegram bot.</p>
+    <p>Earning is <strong>unlimited</strong> and totally free!</p>
+    <p>If you don’t have Telegram, go to your Play Store or App Store, search and install <strong>Telegram</strong>.</p>
+    <p>Then search for our bot:</p>
+    <p><img src="https://telegram.org/img/t_logo.png" alt="Telegram"> 
+      <a href="https://t.me/YourBotUsername" target="_blank">@YourBotUsername</a></p>
+  </div>
 </body>
 </html>

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Terms & Conditions - DemoTaskEarners</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 30px;
+      max-width: 600px;
+      margin: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>Terms & Conditions</h1>
+  <p>
+    Users can earn money by performing tasks in our bot.<br>
+    Deposits are free. Withdrawals cost 5%.<br>
+    You may advertise your business and reach real users.<br>
+    Earning is unlimited!
+  </p>
+  <p id="status" style="color: red; font-weight: bold;"></p>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get("token");
+
+    if (!token) {
+      document.getElementById("status").textContent = "No token provided.";
+    } else {
+      fetch("/api/ipcheck?token=" + encodeURIComponent(token))
+        .then(res => res.json())
+        .then(data => {
+          if (data.vpn) {
+            alert("You are using a VPN. Please disable it and refresh the page.");
+          } else if (data.success) {
+            document.getElementById("status").style.color = "green";
+            document.getElementById("status").textContent = "IP submitted successfully.";
+          } else {
+            document.getElementById("status").textContent = "Invalid or failed request.";
+          }
+        });
+    }
+  </script>
+</body>
+</html>
