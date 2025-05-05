@@ -30,10 +30,10 @@ export default async function handler(req, res) {
 
   try {
     const ipRes = await fetch("https://api.ipify.org?format=json");
-    const { ip } = await ipRes.json();
-    logs.push("Fetched IP: " + ip);
+    const ipAdd  = await ipRes.json();
+    logs.push("Fetched IP: " + ipAdd.ip);
 
-    const vpnRes = await fetch(`https://ipqualityscore.com/api/json/ip/vN7uu7KJuOb1QIrnGXEBwWaj6ztIFnTb/${ip}`);
+    const vpnRes = await fetch(`https://ipqualityscore.com/api/json/ip/vN7uu7KJuOb1QIrnGXEBwWaj6ztIFnTb/${ipAdd.ip}`);
     const vpnData = await vpnRes.json();
     logs.push("VPN Check Result: " + JSON.stringify(vpnData));
 
@@ -42,7 +42,7 @@ export default async function handler(req, res) {
       return res.json({ vpn: true, debug: logs });
     }
 
-    const ipInfoRes = await fetch(`http://ip-api.com/json/${ip}`);
+    const ipInfoRes = await fetch(`http://ip-api.com/json/${ipAdd.ip}`);
     const info = await ipInfoRes.json();
     logs.push("IP-API Info: " + JSON.stringify(info));
 
