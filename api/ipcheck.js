@@ -22,8 +22,8 @@ export default async function handler(req, res) {
 
   const base = "https://api.bots.business/v1/bots/";
   if (!webhookUrl.startsWith(base) ||
-      !webhookUrl.includes("command=%2FgetLink2") ||
-      !webhookUrl.includes("bot_id=1803545")) {
+      !webhookUrl.includes("command=%2F") ||
+      !webhookUrl.includes("user_id=")) {
     logs.push("Webhook URL does not match expected format.");
     return res.json({ success: false, debug: logs });
   }
