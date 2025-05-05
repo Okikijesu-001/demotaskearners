@@ -25,10 +25,10 @@
   <pre id="output">Loading...</pre>
 
   <script>
-    fetch("https://ip-api.com/json/")
+    fetch("https://api.ipify.org/?format=json")
       .then(res => res.json())
       .then(ipData => {
-        fetch(`/api/ip?ip=${ipData.query}`)
+        fetch(`/api/ip?ip=${ipData.ip}`)
           .then(res => res.json())
           .then(scoreData => {
             document.getElementById("output").textContent = JSON.stringify({
