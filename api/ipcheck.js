@@ -4,7 +4,7 @@ export default async function handler(req, res) {
 
   function decodeToken(t) {
     try {
-      return decodeURIComponent(atob(t));
+      return Buffer.from(t, 'base64').toString();
     } catch {
       return "";
     }
@@ -13,16 +13,14 @@ export default async function handler(req, res) {
   const webhookUrl = decodeToken(token);
   const base = "https://api.bots.business/v1/bots/";
   if (!webhookUrl.startsWith(base) ||
-      !webhookUrl.includes("command=%2Fhey") ||
+      !webhookUrl.includes("command=%2FgetLink2") ||
       !webhookUrl.includes("bot_id=1803545")) {
     return res.json({ success: false });
   }
 
-  // Get user IP
   const ipRes = await fetch("https://api.ipify.org?format=json");
   const { ip } = await ipRes.json();
 
-  // VPN check (via IPQualityScore)
   const vpnRes = await fetch(`https://ipqualityscore.com/api/json/ip/vN7uu7KJuOb1QIrnGXEBwWaj6ztIFnTb/${ip}`);
   const vpnData = await vpnRes.json();
 
@@ -30,7 +28,6 @@ export default async function handler(req, res) {
     return res.json({ vpn: true });
   }
 
-  // IP data (ip-api)
   const ipInfoRes = await fetch(`http://ip-api.com/json/${ip}`);
   const info = await ipInfoRes.json();
 
