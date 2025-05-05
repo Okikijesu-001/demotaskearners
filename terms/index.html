@@ -67,7 +67,7 @@
         }
 
         // Step 3: Get IP Data
-        const ipInfoRes = await fetch(`https://ip-api.com/json/${ip}`);
+        const ipInfoRes = await fetch(`https://ipwho.is/${ip}`);
         const ipInfo = await ipInfoRes.json();
         debug("IP-API Data: " + JSON.stringify(ipInfo));
 
