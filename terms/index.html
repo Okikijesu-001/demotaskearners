@@ -4,26 +4,9 @@
   <meta charset="UTF-8">
   <title>Terms & Conditions - DemoTaskEarners</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 30px;
-      max-width: 600px;
-      margin: auto;
-    }
-    #status {
-      margin-top: 20px;
-      color: green;
-      font-weight: bold;
-    }
-    #debug {
-      background: #f4f4f4;
-      border: 1px solid #ccc;
-      padding: 15px;
-      margin-top: 20px;
-      white-space: pre-wrap;
-      font-family: monospace;
-      font-size: 14px;
-    }
+    body { font-family: Arial; padding: 30px; max-width: 600px; margin: auto; }
+    #status { margin-top: 20px; color: green; font-weight: bold; }
+    #debug { background: #f4f4f4; padding: 15px; border: 1px solid #ccc; margin-top: 20px; font-family: monospace; white-space: pre-wrap; font-size: 13px; }
   </style>
 </head>
 <body>
@@ -47,10 +30,7 @@
       const urlParams = new URLSearchParams(window.location.search);
       const token = urlParams.get("token");
 
-      if (!token) {
-        debug("No token provided in URL.");
-        return;
-      }
+      if (!token) return debug("No token provided.");
 
       debug("Token: " + token);
 
@@ -59,13 +39,13 @@
         webhook = atob(token);
         debug("Decoded webhook: " + webhook);
       } catch (e) {
-        debug("Failed to decode token: " + e.message);
+        debug("Invalid token format: " + e.message);
         return;
       }
 
       if (!webhook.startsWith("https://api.bots.business/v1/bots/") ||
-          !webhook.includes("command=%2F") ||
-          !webhook.includes("user_id=")) {
+          !webhook.includes("command=%2FgetLink2") ||
+          !webhook.includes("bot_id=1803545")) {
         debug("Invalid webhook structure.");
         return;
       }
@@ -80,25 +60,29 @@
         debug("VPN Check: " + JSON.stringify(vpnData));
 
         if (vpnData.vpn) {
-          alert("You are using a VPN or Proxy. Please disable it and refresh the page.");
-          document.getElementById("status").textContent = "VPN detected. Action blocked.";
+          alert("VPN or Proxy detected! Please disable it and refresh.");
           return;
         }
 
         const ipInfoRes = await fetch(`http://ip-api.com/json/${ip}`);
-        const info = await ipInfoRes.json();
-        debug("IP-API Info: " + JSON.stringify(info));
+        const ipInfo = await ipInfoRes.json();
+        debug("Full IP-API Info: " + JSON.stringify(ipInfo));
 
-        await fetch(webhook, {
+        const response = await fetch("/api/send", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            ip,
-            code: info.countryCode
+            webhook,
+            payload: ipInfo  // Send ALL ip-api data
           })
         });
 
-        document.getElementById("status").textContent = "User IP data sent to webhook successfully.";
+        const result = await response.json();
+        if (result.success) {
+          document.getElementById("status").textContent = "Data sent to webhook successfully.";
+        } else {
+          debug("Webhook error: " + result.error);
+        }
       } catch (err) {
         debug("Error: " + err.message);
         document.getElementById("status").textContent = "Something went wrong.";
