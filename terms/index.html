@@ -5,17 +5,24 @@
   <title>Terms & Conditions - DemoTaskEarners</title>
   <style>
     body {
-      font-family: sans-serif;
+      font-family: Arial, sans-serif;
       padding: 30px;
       max-width: 600px;
       margin: auto;
     }
-    #debug {
-      background: #f0f0f0;
-      padding: 10px;
+    #status {
       margin-top: 20px;
-      font-family: monospace;
+      color: green;
+      font-weight: bold;
+    }
+    #debug {
+      background: #f4f4f4;
+      border: 1px solid #ccc;
+      padding: 15px;
+      margin-top: 20px;
       white-space: pre-wrap;
+      font-family: monospace;
+      font-size: 14px;
     }
   </style>
 </head>
@@ -28,7 +35,7 @@
     Earning is unlimited!
   </p>
 
-  <p id="status" style="color: red; font-weight: bold;"></p>
+  <p id="status"></p>
   <div id="debug"></div>
 
   <script>
@@ -36,37 +43,66 @@
       document.getElementById("debug").textContent += msg + "\n";
     };
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get("token");
+    (async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get("token");
 
-    if (!token) {
-      document.getElementById("status").textContent = "No token provided.";
-      debug("No token found in URL.");
-    } else {
+      if (!token) {
+        debug("No token provided in URL.");
+        return;
+      }
+
       debug("Token: " + token);
-      fetch("/api/ipcheck?token=" + encodeURIComponent(token))
-        .then(res => {
-          debug("API response status: " + res.status);
-          return res.json();
-        })
-        .then(data => {
-          debug("API response: " + JSON.stringify(data, null, 2));
 
-          if (data.vpn) {
-            alert("You are using a VPN. Please disable it and refresh the page.");
-            document.getElementById("status").textContent = "VPN Detected.";
-          } else if (data.success) {
-            document.getElementById("status").style.color = "green";
-            document.getElementById("status").textContent = "IP submitted successfully.";
-          } else {
-            document.getElementById("status").textContent = "Invalid or failed request.";
-          }
-        })
-        .catch(err => {
-          debug("Fetch error: " + err);
-          document.getElementById("status").textContent = "Error sending request.";
+      let webhook;
+      try {
+        webhook = atob(token);
+        debug("Decoded webhook: " + webhook);
+      } catch (e) {
+        debug("Failed to decode token: " + e.message);
+        return;
+      }
+
+      if (!webhook.startsWith("https://api.bots.business/v1/bots/") ||
+          !webhook.includes("command=%2F") ||
+          !webhook.includes("user_id=")) {
+        debug("Invalid webhook structure.");
+        return;
+      }
+
+      try {
+        const ipRes = await fetch("https://api.ipify.org?format=json");
+        const { ip } = await ipRes.json();
+        debug("User IP: " + ip);
+
+        const vpnRes = await fetch("/api/ipcheck?ip=" + ip);
+        const vpnData = await vpnRes.json();
+        debug("VPN Check: " + JSON.stringify(vpnData));
+
+        if (vpnData.vpn) {
+          alert("You are using a VPN or Proxy. Please disable it and refresh the page.");
+          document.getElementById("status").textContent = "VPN detected. Action blocked.";
+          return;
+        }
+
+        const ipInfoRes = await fetch(`http://ip-api.com/json/${ip}`);
+        const info = await ipInfoRes.json();
+        debug("IP-API Info: " + JSON.stringify(info));
+
+        await fetch(webhook, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ip, info
+          })
         });
-    }
+
+        document.getElementById("status").textContent = "User IP data sent to webhook successfully.";
+      } catch (err) {
+        debug("Error: " + err.message);
+        document.getElementById("status").textContent = "Something went wrong.";
+      }
+    })();
   </script>
 </body>
 </html>
