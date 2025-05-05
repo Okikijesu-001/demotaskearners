@@ -44,8 +44,8 @@
       }
 
       if (!webhook.startsWith("https://api.bots.business/v1/bots/") ||
-          !webhook.includes("command=%2FgetLink2") ||
-          !webhook.includes("bot_id=1803545")) {
+          !webhook.includes("command=%2F") ||
+          !webhook.includes("user_id=")) {
         debug("Invalid webhook structure.");
         return;
       }
