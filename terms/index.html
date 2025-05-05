@@ -10,6 +10,13 @@
       max-width: 600px;
       margin: auto;
     }
+    #debug {
+      background: #f0f0f0;
+      padding: 10px;
+      margin-top: 20px;
+      font-family: monospace;
+      white-space: pre-wrap;
+    }
   </style>
 </head>
 <body>
@@ -20,28 +27,47 @@
     You may advertise your business and reach real users.<br>
     Earning is unlimited!
   </p>
+
   <p id="status" style="color: red; font-weight: bold;"></p>
+  <div id="debug"></div>
 
   <script>
+    const debug = (msg) => {
+      document.getElementById("debug").textContent += msg + "\n";
+    };
+
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get("token");
 
     if (!token) {
       document.getElementById("status").textContent = "No token provided.";
+      debug("No token found in URL.");
     } else {
+      debug("Token: " + token);
       fetch("/api/ipcheck?token=" + encodeURIComponent(token))
-        .then(res => res.json())
+        .then(res => {
+          debug("API response status: " + res.status);
+          return res.json();
+        })
         .then(data => {
+          debug("API response: " + JSON.stringify(data, null, 2));
+
           if (data.vpn) {
             alert("You are using a VPN. Please disable it and refresh the page.");
+            document.getElementById("status").textContent = "VPN Detected.";
           } else if (data.success) {
             document.getElementById("status").style.color = "green";
             document.getElementById("status").textContent = "IP submitted successfully.";
           } else {
             document.getElementById("status").textContent = "Invalid or failed request.";
           }
+        })
+        .catch(err => {
+          debug("Fetch error: " + err);
+          document.getElementById("status").textContent = "Error sending request.";
         });
     }
   </script>
 </body>
 </html>
+
