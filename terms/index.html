@@ -66,16 +66,19 @@
           return;
         }
 
-        // Step 3: Get IP Data
+        // Step 3: Get IP Info
         const ipInfoRes = await fetch(`https://ipwho.is/${ip}`);
         const ipInfo = await ipInfoRes.json();
-        debug("IP-API Data: " + JSON.stringify(ipInfo));
+        debug("IP Info: " + JSON.stringify(ipInfo));
 
-        // Step 4: Send IP data to webhook directly from browser
-        fetch(webhook, {
+        // Step 4: Send to webhook using /api/forward
+        fetch("/api/forward", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(ipInfo)
+          body: JSON.stringify({
+            webhook: webhook,
+            ipData: ipInfo
+          })
         })
         .then(res => res.ok ? "Data sent successfully!" : "Failed to send to webhook")
         .then(msg => document.getElementById("status").innerText = msg)
@@ -92,4 +95,3 @@
   </script>
 </body>
 </html>
-
