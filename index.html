@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Welcome to DemoTaskEarners</title>
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      padding: 30px;
+      background: #f8f8f8;
+    }
+    pre {
+      background: #eee;
+      padding: 15px;
+      text-align: left;
+      display: inline-block;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Welcome to DemoTaskEarners</h1>
+  <p>Your IP info:</p>
+  <pre id="output">Loading...</pre>
+
+  <script>
+    fetch("http://ip-api.com/json")
+      .then(res => res.json())
+      .then(ipData => {
+        fetch(`/api/ip?ip=${ipData.query}`)
+          .then(res => res.json())
+          .then(scoreData => {
+            document.getElementById("output").textContent = JSON.stringify({
+              ip: ipData.query,
+              country: ipData.country,
+              city: ipData.city,
+              isp: ipData.isp,
+              ...scoreData
+            }, null, 2);
+          });
+      })
+      .catch(err => {
+        document.getElementById("output").textContent = "Error loading IP info.";
+      });
+  </script>
+</body>
+</html>
