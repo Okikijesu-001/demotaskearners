@@ -61,7 +61,7 @@
         const vpnData = await vpnRes.json();
         debug("VPN Check: " + JSON.stringify(vpnData));
 
-        if (vpnData.vpn) {
+        if (vpnData.raw.vpn || vpnData.raw.tor || vpnData.raw.active_vpn || vpnData.raw.active_tor) {
           alert("VPN or Proxy detected! Please disable it and refresh the page.");
           return;
         }
