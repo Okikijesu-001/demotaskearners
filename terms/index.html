@@ -4,30 +4,9 @@
   <meta charset="UTF-8" />
   <title>Terms & Conditions - DemoTaskEarners</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      max-width: 600px;
-      margin: auto;
-    }
-    #status {
-      margin-top: 20px;
-      color: green;
-      font-weight: bold;
-    }
-    #loading {
-      color: gray;
-      margin-top: 10px;
-    }
-    #debug {
-      background: #f4f4f4;
-      padding: 10px;
-      border: 1px solid #ccc;
-      margin-top: 20px;
-      font-family: monospace;
-      white-space: pre-wrap;
-      font-size: 13px;
-    }
+    body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: auto; }
+    #status { margin-top: 20px; color: green; font-weight: bold; }
+    #debug { background: #f4f4f4; padding: 10px; border: 1px solid #ccc; margin-top: 20px; font-family: monospace; white-space: pre-wrap; font-size: 13px; }
   </style>
 </head>
 <body>
@@ -40,23 +19,18 @@
   </p>
 
   <p id="status"></p>
-  <div id="loading"></div>
   <div id="debug"></div>
 
   <script>
     const debug = (msg) => {
-      document.getElementById("debug").textContent += msg + "\n\n";
+      document.getElementById("debug").textContent += msg + "\n";
     };
 
     (async () => {
       const urlParams = new URLSearchParams(window.location.search);
       const token = urlParams.get("token");
 
-      if (!token) {
-        alert("No token provided in the link.");
-        return debug("No token provided.");
-      }
-
+      if (!token) return debug("No token provided.");
       debug("Token: " + token);
 
       let webhook;
@@ -76,8 +50,6 @@
       }
 
       try {
-        document.getElementById("loading").innerText = "Checking VPN and sending data...";
-
         // Step 1: Get User IP
         const ipRes = await fetch("https://api.ipify.org?format=json");
         const { ip } = await ipRes.json();
@@ -98,33 +70,22 @@
         const ipInfo = await ipInfoRes.json();
         debug("IP-API Data: " + JSON.stringify(ipInfo));
 
-        // Step 4: Send simplified data to webhook
         const dataToSend = {
           ip: ipInfo.ip,
           country: ipInfo.country,
           countryCode: ipInfo.country_code,
-          timezone: ipInfo.timezone?.id || "N/A"
+          timezone: ipInfo.timezone?.id
         };
 
-        fetch(webhook, {
+        // Step 4: Send via your server-side relay to bypass CORS
+        const relayRes = await fetch("/api/relay", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(dataToSend)
-        })
-        .then(res => {
-          document.getElementById("loading").innerText = "";
-          if (res.ok) {
-            document.getElementById("status").innerText = "✅ Data sent successfully!";
-          } else {
-            document.getElementById("status").innerText = "❌ Failed to send data to the bot.";
-          }
-        })
-        .catch(err => {
-          document.getElementById("loading").innerText = "";
-          console.error("Error sending to webhook:", err);
-          document.getElementById("status").innerText = "Error: " + err.message;
+          body: JSON.stringify({ webhook, data: dataToSend })
         });
 
+        const msg = await relayRes.text();
+        document.getElementById("status").innerText = relayRes.ok ? "✅ Data sent successfully!" : "❌ Failed to send to webhook: " + msg;
       } catch (err) {
         debug("Error: " + err.message);
         document.getElementById("status").textContent = "Something went wrong.";
