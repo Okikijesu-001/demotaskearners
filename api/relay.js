@@ -18,7 +18,7 @@ export default async function handler(req, res) {
   try {
     const forwardRes = await fetch(webhook, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (compatible; MyBot/1.0; +https://vercel.com)" },
       body: JSON.stringify(data),
     });
 
