@@ -1,101 +1,135 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Terms & Conditions - DemoTaskEarners</title>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: auto; }
-    #status { margin-top: 20px; color: green; font-weight: bold; }
-    #debug { background: #f4f4f4; padding: 10px; border: 1px solid #ccc; margin-top: 20px; font-family: monospace; white-space: pre-wrap; font-size: 13px; }
-  </style>
+  <meta charset="UTF-8" />
+  <title>Terms & Conditions - DemoTaskEarners</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+    }
+    #status {
+      margin-top: 20px;
+      color: green;
+      font-weight: bold;
+    }
+    #loading {
+      color: gray;
+      margin-top: 10px;
+    }
+    #debug {
+      background: #f4f4f4;
+      padding: 10px;
+      border: 1px solid #ccc;
+      margin-top: 20px;
+      font-family: monospace;
+      white-space: pre-wrap;
+      font-size: 13px;
+    }
+  </style>
 </head>
 <body>
-  <h1>Terms & Conditions</h1>
-  <p>
-    Users can earn money by performing tasks in our bot.<br>
-    Deposits are free. Withdrawals cost 5%.<br>
-    You may advertise your business and reach real users.<br>
-    Earning is unlimited!
-  </p>
+  <h1>Terms & Conditions</h1>
+  <p>
+    Users can earn money by performing tasks in our bot.<br>
+    Deposits are free. Withdrawals cost 5%.<br>
+    You may advertise your business and reach real users.<br>
+    Earning is unlimited!
+  </p>
 
-  <p id="status"></p>
-  <div id="debug"></div>
+  <p id="status"></p>
+  <div id="loading"></div>
+  <div id="debug"></div>
 
-  <script>
-    const debug = (msg) => {
-      document.getElementById("debug").textContent += msg + "\n";
-    };
+  <script>
+    const debug = (msg) => {
+      document.getElementById("debug").textContent += msg + "\n\n";
+    };
 
-    (async () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const token = urlParams.get("token");
+    (async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get("token");
 
-      if (!token) return debug("No token provided.");
+      if (!token) {
+        alert("No token provided in the link.");
+        return debug("No token provided.");
+      }
 
-      debug("Token: " + token);
+      debug("Token: " + token);
 
-      let webhook;
-      try {
-        webhook = atob(token);
-        debug("Decoded webhook: " + webhook);
-      } catch (e) {
-        debug("Invalid token: " + e.message);
-        return;
-      }
+      let webhook;
+      try {
+        webhook = atob(token);
+        debug("Decoded webhook: " + webhook);
+      } catch (e) {
+        debug("Invalid token: " + e.message);
+        return;
+      }
 
-      if (!webhook.startsWith("https://api.bots.business/v1/bots/") ||
-          !webhook.includes("command=%2F") ||
-          !webhook.includes("user_id=")) {
-        debug("Invalid webhook structure.");
-        return;
-      }
+      if (!webhook.startsWith("https://api.bots.business/v1/bots/") ||
+          !webhook.includes("command=%2F") ||
+          !webhook.includes("user_id=")) {
+        debug("Invalid webhook structure.");
+        return;
+      }
 
-      try {
-        // Step 1: Get User IP
-        const ipRes = await fetch("https://api.ipify.org?format=json");
-        const { ip } = await ipRes.json();
-        debug("User IP: " + ip);
+      try {
+        document.getElementById("loading").innerText = "Checking VPN and sending data...";
 
-        // Step 2: VPN Check
-        const vpnRes = await fetch("/api/ipcheck?ip=" + ip);
-        const vpnData = await vpnRes.json();
-        debug("VPN Check: " + JSON.stringify(vpnData));
+        // Step 1: Get User IP
+        const ipRes = await fetch("https://api.ipify.org?format=json");
+        const { ip } = await ipRes.json();
+        debug("User IP: " + ip);
 
-        if (vpnData.raw.vpn || vpnData.raw.tor || vpnData.raw.active_vpn || vpnData.raw.active_tor) {
-          alert("VPN or Proxy detected! Please disable it and refresh the page.");
-          return;
-        }
+        // Step 2: VPN Check
+        const vpnRes = await fetch("/api/ipcheck?ip=" + ip);
+        const vpnData = await vpnRes.json();
+        debug("VPN Check: " + JSON.stringify(vpnData));
 
-        // Step 3: Get IP Data
-        const ipInfoRes = await fetch(`https://ipwho.is/${ip}`);
-        const ipInfo = await ipInfoRes.json();
-        debug("IP-API Data: " + JSON.stringify(ipInfo));
+        if (vpnData.raw.vpn || vpnData.raw.tor || vpnData.raw.active_vpn || vpnData.raw.active_tor) {
+          alert("VPN or Proxy detected! Please disable it and refresh the page.");
+          return;
+        }
 
-        // Step 4: Send IP data to webhook directly from browser
+        // Step 3: Get IP Info
+        const ipInfoRes = await fetch(`https://ipwho.is/${ip}`);
+        const ipInfo = await ipInfoRes.json();
+        debug("IP-API Data: " + JSON.stringify(ipInfo));
+
+        // Step 4: Send simplified data to webhook
         const dataToSend = {
           ip: ipInfo.ip,
           country: ipInfo.country,
           countryCode: ipInfo.country_code,
-          timezone: ipInfo.timezone?.id
+          timezone: ipInfo.timezone?.id || "N/A"
         };
 
-        fetch(webhook, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(dataToSend)
-        })
-        .then(res => res.ok ? "Data sent successfully!" : "Failed to send to webhook")
-        .then(msg => document.getElementById("status").innerText = msg)
-        .catch(err => {
-          console.error("Error sending to webhook:", err);
-          document.getElementById("status").innerText = "Error: " + err.message;
-        });
+        fetch(webhook, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(dataToSend)
+        })
+        .then(res => {
+          document.getElementById("loading").innerText = "";
+          if (res.ok) {
+            document.getElementById("status").innerText = "✅ Data sent successfully!";
+          } else {
+            document.getElementById("status").innerText = "❌ Failed to send data to the bot.";
+          }
+        })
+        .catch(err => {
+          document.getElementById("loading").innerText = "";
+          console.error("Error sending to webhook:", err);
+          document.getElementById("status").innerText = "Error: " + err.message;
+        });
 
-      } catch (err) {
-        debug("Error: " + err.message);
-        document.getElementById("status").textContent = "Something went wrong.";
-      }
-    })();
-  </script>
+      } catch (err) {
+        debug("Error: " + err.message);
+        document.getElementById("status").textContent = "Something went wrong.";
+      }
+    })();
+  </script>
 </body>
 </html>
