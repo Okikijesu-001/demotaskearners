@@ -78,7 +78,7 @@
         };
 
         // Step 4: Send via your server-side relay to bypass CORS
-        const relayRes = await fetch("/api/relay", {
+        const relayRes = await fetch("/api/send", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ webhook, data: dataToSend })
