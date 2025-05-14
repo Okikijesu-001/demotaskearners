@@ -1,20 +1,39 @@
+export const config = {
+  api: {
+    bodyParser: true, // Required to parse JSON body
+  },
+};
+
 export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
+
   const { webhook, data } = req.body;
 
-  if (!webhook || !webhook.startsWith("https://api.bots.business/")) {
-    return res.status(400).json({ error: "Invalid webhook URL" });
+  if (!webhook || typeof webhook !== "string" || !webhook.startsWith("https://api.bots.business/")) {
+    return res.status(400).json({ error: "Invalid or missing webhook URL" });
   }
 
   try {
-    const response = await fetch(webhook, {
+    const forwardRes = await fetch(webhook, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data)
+      body: JSON.stringify(data),
     });
 
-    const result = await response.text();
-    res.status(response.status).send(result);
+    const text = await forwardRes.text(); // Capture response from Telegram API
+    console.log("✅ Sent to webhook:", webhook);
+    console.log("📤 Data:", data);
+    console.log("📥 Response:", text);
+
+    if (!forwardRes.ok) {
+      return res.status(forwardRes.status).json({ error: text });
+    }
+
+    return res.status(200).json({ success: true, response: text });
   } catch (err) {
-    res.status(500).json({ error: "Relay error: " + err.message });
+    console.error("❌ Relay Error:", err);
+    return res.status(500).json({ error: err.message });
   }
 }
