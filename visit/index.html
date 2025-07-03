@@ -1,40 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Visit Task</title>
 <style>
   body {
+    margin: 0;
     background: #000;
-    color: #fff;
     font-family: sans-serif;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
     height: 100vh;
-    margin: 0;
   }
-  #message {
-    font-size: 24px;
+  #topBar {
+    background: #000;
+    color: #fff;
+    font-size: 18px;
     text-align: center;
-    background: #fff;
-    color: #000;
-    width: 100%;
-    padding: 16px;
+    padding: 10px;
     position: sticky;
     top: 0;
     z-index: 10;
-    font-weight: bold;
-    border-bottom: 2px solid #ccc;
   }
   #progressContainer {
+    height: 4px;
     width: 100%;
-    height: 6px;
-    background: #222;
-    overflow: hidden;
-    position: relative;
+    background: #111;
   }
   #progressBar {
     height: 100%;
@@ -42,22 +34,22 @@
     background: linear-gradient(90deg, #3498db, #1abc9c);
     transition: width 1s linear, background 1s linear, box-shadow 1s linear;
   }
-  iframe {
+  #frame {
     flex: 1;
     width: 100%;
     border: none;
   }
   #errorMsg {
-    font-size: 20px;
     color: red;
+    font-size: 20px;
     text-align: center;
+    margin: 20px;
     display: none;
-    margin-top: 20px;
   }
 </style>
 </head>
 <body>
-<div id="message">Loading...</div>
+<div id="topBar">Loading...</div>
 <div id="progressContainer"><div id="progressBar"></div></div>
 <iframe id="frame"></iframe>
 <div id="errorMsg">Webpage not available</div>
@@ -88,26 +80,23 @@ function sendWebhook(userId, taskId, url) {
 const params = new URLSearchParams(window.location.search);
 const token = params.get("token");
 
-const message = document.getElementById("message");
+const topBar = document.getElementById("topBar");
 const frame = document.getElementById("frame");
 const errorMsg = document.getElementById("errorMsg");
 const progressBar = document.getElementById("progressBar");
 
 if (!token) {
-  message.innerText = "NOTHING TO DO HERE";
-  message.style.fontSize = "32px";
+  topBar.innerText = "NOTHING TO DO HERE";
   frame.style.display = "none";
 } else {
   const decoded = base64Decode(token);
   if (!decoded || !decoded.includes("#-#")) {
-    message.innerText = "NOTHING TO DO HERE";
-    message.style.fontSize = "32px";
+    topBar.innerText = "NOTHING TO DO HERE";
     frame.style.display = "none";
   } else {
     const parts = decoded.split("#-#");
     if (parts.length !== 4) {
-      message.innerText = "NOTHING TO DO HERE";
-      message.style.fontSize = "32px";
+      topBar.innerText = "NOTHING TO DO HERE";
       frame.style.display = "none";
     } else {
       const userId = parts[0];
@@ -116,18 +105,21 @@ if (!token) {
       const redirectUrl = parts[3];
 
       let remaining = duration;
-      message.innerText = `Stay on this page for ${remaining} seconds to complete the task`;
+      topBar.innerText = `Stay on this page for ${remaining} seconds to complete the task`;
 
+      // Load iframe
       frame.src = redirectUrl;
 
-      // Check if the iframe is blocked
+      // Check if iframe is blocked using postMessage + fallback timer
+      let loaded = false;
+      window.addEventListener("message", function(e) {
+        if (e.data === "frame-loaded") {
+          loaded = true;
+        }
+      });
+
       setTimeout(() => {
-        try {
-          let iframeDoc = frame.contentDocument || frame.contentWindow.document;
-          if (!iframeDoc || iframeDoc.body.innerHTML.length === 0) {
-            throw new Error("Blocked");
-          }
-        } catch (e) {
+        if (!loaded) {
           frame.style.display = "none";
           errorMsg.style.display = "block";
         }
@@ -136,17 +128,17 @@ if (!token) {
       const countdown = setInterval(() => {
         remaining--;
         if (remaining >= 0) {
-          message.innerText = `Stay on this page for ${remaining} seconds to complete the task`;
+          topBar.innerText = `Stay on this page for ${remaining} seconds to complete the task`;
           const progressPercent = ((duration - remaining) / duration) * 100;
           progressBar.style.width = progressPercent + "%";
           if (progressPercent > 70) {
-            progressBar.style.background = "#2ecc71"; // green
+            progressBar.style.background = "#2ecc71";
             progressBar.style.boxShadow = "0 0 10px #2ecc71";
           }
         }
         if (remaining <= 0) {
           clearInterval(countdown);
-          message.innerText = "Task completed ✅";
+          topBar.innerText = "Task completed ✅";
           progressBar.style.width = "100%";
           progressBar.style.background = "#2ecc71";
           progressBar.style.boxShadow = "0 0 10px #2ecc71";
