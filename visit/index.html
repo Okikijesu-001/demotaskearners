@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Visit Task</title>
 <style>
@@ -14,9 +14,9 @@
     height: 100vh;
   }
   #topBar {
-    background: #000;
-    color: #fff;
-    font-size: 20px;
+    background: #fff;
+    color: #000;
+    font-size: 22px;
     font-weight: 600;
     text-align: center;
     padding: 12px;
@@ -40,20 +40,12 @@
     width: 100%;
     border: none;
   }
-  #errorMsg {
-    color: red;
-    font-size: 20px;
-    text-align: center;
-    margin: 20px;
-    display: none;
-  }
 </style>
 </head>
 <body>
 <div id="topBar">Loading...</div>
 <div id="progressContainer"><div id="progressBar"></div></div>
 <iframe id="frame"></iframe>
-<div id="errorMsg">Webpage not available</div>
 
 <script>
 function base64Decode(str) {
@@ -83,7 +75,6 @@ const token = params.get("token");
 
 const topBar = document.getElementById("topBar");
 const frame = document.getElementById("frame");
-const errorMsg = document.getElementById("errorMsg");
 const progressBar = document.getElementById("progressBar");
 
 if (!token) {
@@ -108,29 +99,8 @@ if (!token) {
       let remaining = duration;
       topBar.innerText = `Stay on this page for ${remaining} seconds to complete the task`;
 
-      // Load iframe
       frame.src = redirectUrl;
 
-      // Use interval-based check for iframe block detection
-      let checkCount = 0;
-      const maxChecks = 10; // check for ~10 seconds
-      const checkIframe = setInterval(() => {
-        try {
-          let test = frame.contentDocument || frame.contentWindow.document;
-          // If no error, iframe is accessible
-        } catch (e) {
-          // If blocked:
-          clearInterval(checkIframe);
-          frame.style.display = "none";
-          errorMsg.style.display = "block";
-        }
-        checkCount++;
-        if (checkCount > maxChecks) {
-          clearInterval(checkIframe);
-        }
-      }, 1000);
-
-      // Countdown & progress bar
       const countdown = setInterval(() => {
         remaining--;
         if (remaining >= 0) {
