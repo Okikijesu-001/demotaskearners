@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Visit Task</title>
+<style>
+  body {
+    background: #000;
+    color: #fff;
+    font-family: sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    height: 100vh;
+    margin: 0;
+  }
+  #message {
+    font-size: 20px;
+    text-align: center;
+    background: #000;
+    width: 100%;
+    padding: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  #progressContainer {
+    width: 100%;
+    height: 6px;
+    background: #222;
+    overflow: hidden;
+    position: relative;
+  }
+  #progressBar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #3498db, #1abc9c);
+    box-shadow: 0 0 10px #3498db, 0 0 20px #3498db;
+    transition: width 1s linear, background 0.5s, box-shadow 0.5s;
+  }
+  iframe {
+    flex: 1;
+    width: 100%;
+    border: none;
+  }
+  #errorMsg {
+    font-size: 22px;
+    color: red;
+    text-align: center;
+    display: none;
+    margin-top: 20px;
+  }
+</style>
+</head>
+<body>
+<div id="message">Loading...</div>
+<div id="progressContainer"><div id="progressBar"></div></div>
+<iframe id="frame"></iframe>
+<div id="errorMsg">Webpage not available</div>
+
+<script>
+function base64Decode(str) {
+  try {
+    return decodeURIComponent(escape(window.atob(str)));
+  } catch (e) {
+    return null;
+  }
+}
+
+function sendWebhook(userId, taskId, url) {
+  const webhook = `https://api.bots.business/v1/bots/2008024/new-webhook?&command=%2Fonvisit&public_user_token=8223f21264cbe0d5ec79f8c56893d646&user_id=${userId}`;
+  fetch(webhook, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      status: "success",
+      userId: userId,
+      taskId: taskId,
+      url: url
+    })
+  });
+}
+
+const params = new URLSearchParams(window.location.search);
+const token = params.get("token");
+
+const message = document.getElementById("message");
+const frame = document.getElementById("frame");
+const errorMsg = document.getElementById("errorMsg");
+const progressBar = document.getElementById("progressBar");
+
+if (!token) {
+  message.innerText = "NOTHING TO DO HERE";
+  message.style.fontSize = "32px";
+  frame.style.display = "none";
+} else {
+  const decoded = base64Decode(token);
+  if (!decoded || !decoded.includes("#-#")) {
+    message.innerText = "NOTHING TO DO HERE";
+    message.style.fontSize = "32px";
+    frame.style.display = "none";
+  } else {
+    const parts = decoded.split("#-#");
+    if (parts.length !== 4) {
+      message.innerText = "NOTHING TO DO HERE";
+      message.style.fontSize = "32px";
+      frame.style.display = "none";
+    } else {
+      const userId = parts[0];
+      const taskId = parts[1];
+      const duration = parseInt(parts[2]);
+      const redirectUrl = parts[3];
+
+      let remaining = duration;
+      message.innerText = `Stay on this page for ${remaining} seconds to complete the task`;
+
+      let iframeBlocked = false;
+      frame.src = redirectUrl;
+
+      // Detect blocked iframe
+      const checkFrameBlocked = setTimeout(() => {
+        try {
+          const doc = frame.contentDocument || frame.contentWindow.document;
+          if (!doc || doc.body.children.length === 0) {
+            iframeBlocked = true;
+          }
+        } catch (e) {
+          iframeBlocked = true;
+        }
+        if (iframeBlocked) {
+          frame.style.display = "none";
+          errorMsg.style.display = "block";
+        }
+      }, 3000);
+
+      const countdown = setInterval(() => {
+        remaining--;
+        if (remaining >= 0) {
+          message.innerText = `Stay on this page for ${remaining} seconds to complete the task`;
+          const progressPercent = ((duration - remaining) / duration) * 100;
+          progressBar.style.width = progressPercent + "%";
+          if (progressPercent > 70) {
+            progressBar.style.background = "#2ecc71"; // green when near finish
+            progressBar.style.boxShadow = "0 0 10px #2ecc71, 0 0 20px #2ecc71";
+          }
+        }
+        if (remaining <= 0) {
+          clearInterval(countdown);
+          clearTimeout(checkFrameBlocked);
+          message.innerText = "Task completed ✅";
+          progressBar.style.width = "100%";
+          progressBar.style.background = "#2ecc71";
+          progressBar.style.boxShadow = "0 0 10px #2ecc71, 0 0 20px #2ecc71";
+          sendWebhook(userId, taskId, redirectUrl);
+          setTimeout(() => {
+            window.location.href = redirectUrl;
+          }, 1500);
+        }
+      }, 1000);
+    }
+  }
+}
+</script>
+</body>
+</html>
