@@ -16,9 +16,10 @@
   #topBar {
     background: #000;
     color: #fff;
-    font-size: 18px;
+    font-size: 20px;
+    font-weight: 600;
     text-align: center;
-    padding: 10px;
+    padding: 12px;
     position: sticky;
     top: 0;
     z-index: 10;
@@ -26,13 +27,13 @@
   #progressContainer {
     height: 4px;
     width: 100%;
-    background: #111;
+    background: #222;
   }
   #progressBar {
     height: 100%;
     width: 0%;
     background: linear-gradient(90deg, #3498db, #1abc9c);
-    transition: width 1s linear, background 1s linear, box-shadow 1s linear;
+    transition: width 1s linear, background 0.5s linear;
   }
   #frame {
     flex: 1;
@@ -110,21 +111,26 @@ if (!token) {
       // Load iframe
       frame.src = redirectUrl;
 
-      // Check if iframe is blocked using postMessage + fallback timer
-      let loaded = false;
-      window.addEventListener("message", function(e) {
-        if (e.data === "frame-loaded") {
-          loaded = true;
-        }
-      });
-
-      setTimeout(() => {
-        if (!loaded) {
+      // Use interval-based check for iframe block detection
+      let checkCount = 0;
+      const maxChecks = 10; // check for ~10 seconds
+      const checkIframe = setInterval(() => {
+        try {
+          let test = frame.contentDocument || frame.contentWindow.document;
+          // If no error, iframe is accessible
+        } catch (e) {
+          // If blocked:
+          clearInterval(checkIframe);
           frame.style.display = "none";
           errorMsg.style.display = "block";
         }
-      }, 3000);
+        checkCount++;
+        if (checkCount > maxChecks) {
+          clearInterval(checkIframe);
+        }
+      }, 1000);
 
+      // Countdown & progress bar
       const countdown = setInterval(() => {
         remaining--;
         if (remaining >= 0) {
@@ -133,7 +139,6 @@ if (!token) {
           progressBar.style.width = progressPercent + "%";
           if (progressPercent > 70) {
             progressBar.style.background = "#2ecc71";
-            progressBar.style.boxShadow = "0 0 10px #2ecc71";
           }
         }
         if (remaining <= 0) {
@@ -141,7 +146,6 @@ if (!token) {
           topBar.innerText = "Task completed ✅";
           progressBar.style.width = "100%";
           progressBar.style.background = "#2ecc71";
-          progressBar.style.boxShadow = "0 0 10px #2ecc71";
           sendWebhook(userId, taskId, redirectUrl);
           setTimeout(() => {
             window.location.href = redirectUrl;
