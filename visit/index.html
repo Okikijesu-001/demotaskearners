@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Visit Task</title>
 <style>
   body {
@@ -16,14 +17,17 @@
     margin: 0;
   }
   #message {
-    font-size: 20px;
+    font-size: 24px;
     text-align: center;
-    background: #000;
+    background: #fff;
+    color: #000;
     width: 100%;
-    padding: 12px;
+    padding: 16px;
     position: sticky;
     top: 0;
     z-index: 10;
+    font-weight: bold;
+    border-bottom: 2px solid #ccc;
   }
   #progressContainer {
     width: 100%;
@@ -36,8 +40,7 @@
     height: 100%;
     width: 0%;
     background: linear-gradient(90deg, #3498db, #1abc9c);
-    box-shadow: 0 0 10px #3498db, 0 0 20px #3498db;
-    transition: width 1s linear, background 0.5s, box-shadow 0.5s;
+    transition: width 1s linear, background 1s linear, box-shadow 1s linear;
   }
   iframe {
     flex: 1;
@@ -45,7 +48,7 @@
     border: none;
   }
   #errorMsg {
-    font-size: 22px;
+    font-size: 20px;
     color: red;
     text-align: center;
     display: none;
@@ -115,20 +118,16 @@ if (!token) {
       let remaining = duration;
       message.innerText = `Stay on this page for ${remaining} seconds to complete the task`;
 
-      let iframeBlocked = false;
       frame.src = redirectUrl;
 
-      // Detect blocked iframe
-      const checkFrameBlocked = setTimeout(() => {
+      // Check if the iframe is blocked
+      setTimeout(() => {
         try {
-          const doc = frame.contentDocument || frame.contentWindow.document;
-          if (!doc || doc.body.children.length === 0) {
-            iframeBlocked = true;
+          let iframeDoc = frame.contentDocument || frame.contentWindow.document;
+          if (!iframeDoc || iframeDoc.body.innerHTML.length === 0) {
+            throw new Error("Blocked");
           }
         } catch (e) {
-          iframeBlocked = true;
-        }
-        if (iframeBlocked) {
           frame.style.display = "none";
           errorMsg.style.display = "block";
         }
@@ -141,17 +140,16 @@ if (!token) {
           const progressPercent = ((duration - remaining) / duration) * 100;
           progressBar.style.width = progressPercent + "%";
           if (progressPercent > 70) {
-            progressBar.style.background = "#2ecc71"; // green when near finish
-            progressBar.style.boxShadow = "0 0 10px #2ecc71, 0 0 20px #2ecc71";
+            progressBar.style.background = "#2ecc71"; // green
+            progressBar.style.boxShadow = "0 0 10px #2ecc71";
           }
         }
         if (remaining <= 0) {
           clearInterval(countdown);
-          clearTimeout(checkFrameBlocked);
           message.innerText = "Task completed ✅";
           progressBar.style.width = "100%";
           progressBar.style.background = "#2ecc71";
-          progressBar.style.boxShadow = "0 0 10px #2ecc71, 0 0 20px #2ecc71";
+          progressBar.style.boxShadow = "0 0 10px #2ecc71";
           sendWebhook(userId, taskId, redirectUrl);
           setTimeout(() => {
             window.location.href = redirectUrl;
