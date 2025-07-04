@@ -57,18 +57,21 @@ function base64Decode(str) {
 }
 
 function sendWebhook(userId, taskId, url) {
-  const webhook = `https://api.bots.business/v1/bots/2008024/new-webhook?&command=%2Fonvisit&public_user_token=8223f21264cbe0d5ec79f8c56893d646&user_id=${userId}`;
-  console.log("sending webhook:", userId, taskId, url);
-  fetch(webhook, {
+  const proxyURL = "https://demotaskearners.vercel.app/api/visit";
+  fetch(proxyURL, {
     method: "POST",
-    mode: "no-cors",
-    headers: {"Content-Type": "application/json"},
+    headers: {
+      "Content-Type": "application/json"
+    },
     body: JSON.stringify({
-      status: "success",
       userId: userId,
       taskId: taskId,
       url: url
     })
+  }).then(() => {
+    console.log("Webhook relayed via Vercel.");
+  }).catch(err => {
+    console.error("Proxy webhook failed", err);
   });
 }
 
