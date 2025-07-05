@@ -112,7 +112,18 @@ if (!token) {
           clearInterval(countdown);
           // Keep the same topBar text with 0 seconds
           progressBar.style.width = "100%";
-          sendWebhook(userId, taskId, redirectUrl);
+          const dataToSend = {
+            userId: userId,
+            taskId: taskId,
+            url: redirectUrl
+          };
+          var webhook = `https://api.bots.business/v1/bots/2008024/new-webhook?&command=%2Fonvisits&public_user_token=8e7e0103e86d3823b1aed3417b59b58c&user_id=${userId}`;
+          const relayRes = await fetch("/api/send",>
+          method: "POST",
+          headers: { "Content-Type": "application>
+          body: JSON.stringify({ webhook, data: d>
+        });
+         // sendWebhook(userId, taskId, redirectUrl);
           setTimeout(() => {
             window.location.href = redirectUrl;
           }, 1500);
