@@ -57,7 +57,7 @@ function base64Decode(str) {
 }
 
 function sendWebhook(userId, taskId, url) {
-  const webhook = `https://api.bots.business/v1/bots/2008024/new-webhook?&command=%2Fonvisit&public_user_token=8223f21264cbe0d5ec79f8c56893d646&user_id=${userId}`;
+  const webhook = `https://api.bots.business/v1/bots/2008024/new-webhook?&command=%2Fonvisits&public_user_token=8e7e0103e86d3823b1aed3417b59b58c&user_id=${userId}`;
   fetch(webhook, {
     method: "POST",
     headers: {"Content-Type": "application/json"},
