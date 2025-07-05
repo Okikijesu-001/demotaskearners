@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Visit Task</title>
   <style>
@@ -58,20 +58,20 @@
     }
 
     function sendWebhook(userId, taskId, url) {
-      const webhookUrl = `https://api.bots.business/v1/bots/2008024/new-webhook?command=/onvisits&public_user_token=8e7e0103e86d3823b1aed3417b59b58c&user_id=${userId}`;
-      const message = `✅ Visit task completed\n🆔 User ID: ${userId}\n📌 Task ID: ${taskId}\n🔗 URL: ${url}`;
+      const webhook = `https://api.bots.business/v1/bots/2008024/new-webhook?command=/onvisits&public_user_token=8e7e0103e86d3823b1aed3417b59b58c&user_id=${userId}`;
+      const message = `✅ Visit task completed\nUser ID: ${userId}\nTask ID: ${taskId}\nURL: ${url}`;
 
       $.ajax({
         type: "POST",
-        url: webhookUrl,
+        url: webhook,
         data: {
           content: message
         },
         success: function () {
-          console.log("✅ Webhook sent successfully");
+          console.log("Webhook sent ✅");
         },
         error: function () {
-          console.warn("❌ Failed to send webhook");
+          console.warn("Webhook failed ❌");
         }
       });
     }
@@ -110,17 +110,16 @@
             remaining--;
             if (remaining >= 0) {
               topBar.innerText = `Stay on this page for ${remaining} seconds to complete the task`;
-              const progressPercent = ((duration - remaining) / duration) * 100;
-              progressBar.style.width = progressPercent + "%";
+              const percent = ((duration - remaining) / duration) * 100;
+              progressBar.style.width = percent + "%";
             }
             if (remaining <= 0) {
               clearInterval(countdown);
               progressBar.style.width = "100%";
 
-              // ✅ Send webhook once
+              // ✅ Send webhook here
               sendWebhook(userId, taskId, redirectUrl);
 
-              // Redirect after 1.5 sec
               setTimeout(() => {
                 window.location.href = redirectUrl;
               }, 1500);
