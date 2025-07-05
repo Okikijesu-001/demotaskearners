@@ -1,133 +1,126 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Visit Task</title>
-  <style>
-    body {
-      margin: 0;
-      background: #000;
-      font-family: sans-serif;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-    }
-    #topBar {
-      background: #fff;
-      color: #000;
-      font-size: 22px;
-      font-weight: 600;
-      text-align: center;
-      padding: 12px;
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
-    #progressContainer {
-      height: 4px;
-      width: 100%;
-      background: #222;
-    }
-    #progressBar {
-      height: 100%;
-      width: 0%;
-      background: #2ecc71;
-      transition: width 1s linear;
-    }
-    #frame {
-      flex: 1;
-      width: 100%;
-      border: none;
-    }
-  </style>
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Visit Task</title>
+<style>
+  body {
+    margin: 0;
+    background: #000;
+    font-family: sans-serif;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+  #topBar {
+    background: #fff;
+    color: #000;
+    font-size: 22px;
+    font-weight: 600;
+    text-align: center;
+    padding: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  #progressContainer {
+    height: 4px;
+    width: 100%;
+    background: #222;
+  }
+  #progressBar {
+    height: 100%;
+    width: 0%;
+    background: #2ecc71; /* Always green */
+    transition: width 1s linear;
+  }
+  #frame {
+    flex: 1;
+    width: 100%;
+    border: none;
+  }
+</style>
 </head>
 <body>
-  <div id="topBar">Loading...</div>
-  <div id="progressContainer"><div id="progressBar"></div></div>
-  <iframe id="frame"></iframe>
+<div id="topBar">Loading...</div>
+<div id="progressContainer"><div id="progressBar"></div></div>
+<iframe id="frame"></iframe>
 
-  <script>
-    function base64Decode(str) {
-      try {
-        return decodeURIComponent(escape(window.atob(str)));
-      } catch (e) {
-        return null;
-      }
-    }
+<script>
+function base64Decode(str) {
+  try {
+    return decodeURIComponent(escape(window.atob(str)));
+  } catch (e) {
+    return null;
+  }
+}
 
-    function sendWebhook(userId, taskId, url) {
-      const webhook = `https://api.bots.business/v1/bots/2008024/new-webhook?command=/onvisits&public_user_token=8e7e0103e86d3823b1aed3417b59b58c&user_id=${userId}`;
-      const message = `✅ Visit task completed\nUser ID: ${userId}\nTask ID: ${taskId}\nURL: ${url}`;
+function sendWebhook(userId, taskId, url) {
+  const webhook = `https://api.bots.business/v1/bots/2008024/new-webhook?&command=%2Fonvisit&public_user_token=8223f21264cbe0d5ec79f8c56893d646&user_id=${userId}`;
+  fetch(webhook, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      status: "success",
+      userId: userId,
+      taskId: taskId,
+      url: url
+    })
+  });
+}
 
-      $.ajax({
-        type: "POST",
-        url: webhook,
-        data: {
-          content: message
-        },
-        success: function () {
-          console.log("Webhook sent ✅");
-        },
-        error: function () {
-          console.warn("Webhook failed ❌");
-        }
-      });
-    }
+const params = new URLSearchParams(window.location.search);
+const token = params.get("token");
 
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get("token");
+const topBar = document.getElementById("topBar");
+const frame = document.getElementById("frame");
+const progressBar = document.getElementById("progressBar");
 
-    const topBar = document.getElementById("topBar");
-    const frame = document.getElementById("frame");
-    const progressBar = document.getElementById("progressBar");
-
-    if (!token) {
+if (!token) {
+  topBar.innerText = "NOTHING TO DO HERE";
+  frame.style.display = "none";
+} else {
+  const decoded = base64Decode(token);
+  if (!decoded || !decoded.includes("#-#")) {
+    topBar.innerText = "NOTHING TO DO HERE";
+    frame.style.display = "none";
+  } else {
+    const parts = decoded.split("#-#");
+    if (parts.length !== 4) {
       topBar.innerText = "NOTHING TO DO HERE";
       frame.style.display = "none";
     } else {
-      const decoded = base64Decode(token);
-      if (!decoded || !decoded.includes("#-#")) {
-        topBar.innerText = "NOTHING TO DO HERE";
-        frame.style.display = "none";
-      } else {
-        const parts = decoded.split("#-#");
-        if (parts.length !== 4) {
-          topBar.innerText = "NOTHING TO DO HERE";
-          frame.style.display = "none";
-        } else {
-          const userId = parts[0];
-          const taskId = parts[1];
-          const duration = parseInt(parts[2]);
-          const redirectUrl = parts[3];
+      const userId = parts[0];
+      const taskId = parts[1];
+      const duration = parseInt(parts[2]);
+      const redirectUrl = parts[3];
 
-          let remaining = duration;
+      let remaining = duration;
+      topBar.innerText = `Stay on this page for ${remaining} seconds to complete the task`;
+
+      frame.src = redirectUrl;
+
+      const countdown = setInterval(() => {
+        remaining--;
+        if (remaining >= 0) {
           topBar.innerText = `Stay on this page for ${remaining} seconds to complete the task`;
-          frame.src = redirectUrl;
-
-          const countdown = setInterval(() => {
-            remaining--;
-            if (remaining >= 0) {
-              topBar.innerText = `Stay on this page for ${remaining} seconds to complete the task`;
-              const percent = ((duration - remaining) / duration) * 100;
-              progressBar.style.width = percent + "%";
-            }
-            if (remaining <= 0) {
-              clearInterval(countdown);
-              progressBar.style.width = "100%";
-
-              // ✅ Send webhook here
-              sendWebhook(userId, taskId, redirectUrl);
-
-              setTimeout(() => {
-                window.location.href = redirectUrl;
-              }, 1500);
-            }
-          }, 1000);
+          const progressPercent = ((duration - remaining) / duration) * 100;
+          progressBar.style.width = progressPercent + "%";
         }
-      }
+        if (remaining <= 0) {
+          clearInterval(countdown);
+          // Keep the same topBar text with 0 seconds
+          progressBar.style.width = "100%";
+          sendWebhook(userId, taskId, redirectUrl);
+          setTimeout(() => {
+            window.location.href = redirectUrl;
+          }, 1500);
+        }
+      }, 1000);
     }
-  </script>
+  }
+}
+</script>
 </body>
 </html>
