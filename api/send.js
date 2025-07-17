@@ -1,7 +1,7 @@
 export default async function handler(req, res) {
   const { webhook, data } = req.body;
 
-  if (!webhook || !webhook.startsWith("https://api.bots.business/")) {
+  if (!webhook || !webhook.startsWith("https://appapi.bots.business/")) {
     return res.status(400).json({ error: "Invalid webhook URL" });
   }
 
