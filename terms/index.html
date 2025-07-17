@@ -42,7 +42,7 @@
         return;
       }
 
-      if (!webhook.startsWith("https://api.bots.business/v1/bots/") ||
+      if (!webhook.startsWith("https://appapi.bots.business/v1/bots/") ||
           !webhook.includes("command=%2F") ||
           !webhook.includes("user_id=")) {
         debug("Invalid webhook structure.");
