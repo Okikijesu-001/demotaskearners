@@ -3,7 +3,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Captcha Verification</title>
-  <link href="https://fonts.googleapis.com/css2?family=Rubik+Mono+One&family=Orbitron:wght@500&family=Righteous&family=Black+Ops+One&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Rubik+Mono+One&family=Orbitron:wght@500&family=Righteous&family=Black+Ops+One&family=Press+Start+2P&family=Cabin+Sketch:wght@700&family=Bungee+Shade&family=Monoton&family=Grenze+Gotisch:wght@900&family=Fruktur&display=swap" rel="stylesheet">
   <style>
     * {
       box-sizing: border-box;
@@ -27,19 +27,26 @@
       box-shadow: 0 0 40px rgba(0, 255, 180, 0.1);
       width: 90%;
       max-width: 400px;
+      position: relative;
     }
     .captcha-box {
-      font-size: 36px;
+      font-size: 32px;
       color: white;
       letter-spacing: 6px;
-      background: linear-gradient(145deg, #1c1c1c, #101010);
-      padding: 25px;
+      background: #1a1a1a;
+      padding: 20px;
       border-radius: 10px;
       margin-bottom: 25px;
       transition: all 0.3s ease-in-out;
       display: inline-block;
     }
-    input[type="text"] {
+    .input-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 300px;
+      margin: 0 auto;
+    }
+    .input-wrapper input {
       padding: 12px;
       font-size: 16px;
       border-radius: 6px;
@@ -47,6 +54,23 @@
       width: 100%;
       background-color: #1a1a1a;
       color: #fff;
+    }
+    .input-wrapper::after {
+      content: "";
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      width: 18px;
+      height: 18px;
+      margin-top: -9px;
+      border: 3px solid #3498db;
+      border-top: 3px solid transparent;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
     .error {
       color: #ff5252;
@@ -78,22 +102,24 @@
 <body>
   <div class="container">
     <div id="captchaText" class="captcha-box">Loading...</div>
-    <div>
+    <div class="input-wrapper">
       <input type="text" id="captchaInput" placeholder="Type the word above" />
-      <div class="error" id="error"></div>
     </div>
+    <div class="error" id="error"></div>
     <button class="btn" id="verifyBtn">Verify</button>
     <div id="status"></div>
   </div>  <script>
     const captchaList = [
-      { text: "VERIFY", font: "Orbitron" },
-      { text: "ACCESS", font: "Righteous" },
-      { text: "SECURE", font: "Black Ops One" },
-      { text: "CLICKME", font: "Rubik Mono One" },
-      { text: "ROBOTX", font: "Orbitron" },
-      { text: "ENTRY", font: "Righteous" },
-      { text: "LOGIN", font: "Rubik Mono One" },
-      { text: "BOTSAFE", font: "Black Ops One" }
+      { text: "ROBOTENTRY", font: "Rubik Mono One" },
+      { text: "SECUREPAGE", font: "Orbitron" },
+      { text: "PROTECTED", font: "Press Start 2P" },
+      { text: "VERIFYACCESS", font: "Righteous" },
+      { text: "NOBOTZONE", font: "Cabin Sketch" },
+      { text: "FIREWALL", font: "Bungee Shade" },
+      { text: "BOTGUARD", font: "Black Ops One" },
+      { text: "HUMANONLY", font: "Grenze Gotisch" },
+      { text: "LOGINSAFE", font: "Fruktur" },
+      { text: "AUTHLOCK", font: "Monoton" }
     ];
 
     const selected = captchaList[Math.floor(Math.random() * captchaList.length)];
@@ -107,7 +133,7 @@
     const error = document.getElementById("error");
 
     input.addEventListener("input", () => {
-      const val = input.value.toUpperCase();
+      const val = input.value;
       let isCorrect = true;
       for (let i = 0; i < val.length; i++) {
         if (val[i] !== captcha[i]) {
@@ -115,11 +141,15 @@
           break;
         }
       }
-      error.textContent = isCorrect ? "" : "Incorrect character entered.";
+      if (!isCorrect) {
+        error.textContent = "Incorrect character entered or case mismatch.";
+      } else {
+        error.textContent = "";
+      }
     });
 
     document.getElementById("verifyBtn").addEventListener("click", async () => {
-      const val = input.value.toUpperCase();
+      const val = input.value;
       const urlParams = new URLSearchParams(window.location.search);
       const token = urlParams.get("token");
 
