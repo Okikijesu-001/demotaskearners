@@ -3,7 +3,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Captcha Verification</title>
-  <link href="https://fonts.googleapis.com/css2?family=Rubik+Mono+One&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Rubik+Mono+One&family=Orbitron:wght@500&family=Righteous&family=Black+Ops+One&display=swap" rel="stylesheet">
   <style>
     * {
       box-sizing: border-box;
@@ -11,7 +11,7 @@
     body {
       margin: 0;
       padding: 0;
-      background-color: #000;
+      background: radial-gradient(circle at top, #0f0f0f, #000000);
       color: #fff;
       font-family: 'Arial', sans-serif;
       display: flex;
@@ -22,49 +22,49 @@
     .container {
       text-align: center;
       background: #111;
-      border-radius: 10px;
-      padding: 30px;
-      box-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
+      border-radius: 15px;
+      padding: 40px 30px;
+      box-shadow: 0 0 40px rgba(0, 255, 180, 0.1);
+      width: 90%;
+      max-width: 400px;
     }
     .captcha-box {
-      font-family: 'Rubik Mono One', sans-serif;
-      font-size: 40px;
+      font-size: 36px;
       color: white;
-      letter-spacing: 5px;
-      transform: skew(-5deg);
-      background-color: #222;
-      padding: 20px;
-      border-radius: 8px;
+      letter-spacing: 6px;
+      background: linear-gradient(145deg, #1c1c1c, #101010);
+      padding: 25px;
+      border-radius: 10px;
+      margin-bottom: 25px;
+      transition: all 0.3s ease-in-out;
       display: inline-block;
-      margin-bottom: 20px;
     }
     input[type="text"] {
-      padding: 10px;
+      padding: 12px;
       font-size: 16px;
-      border-radius: 5px;
+      border-radius: 6px;
       border: 1px solid #555;
       width: 100%;
-      max-width: 300px;
-      background-color: #111;
+      background-color: #1a1a1a;
       color: #fff;
     }
     .error {
-      color: red;
+      color: #ff5252;
       font-size: 14px;
       margin-top: 10px;
     }
     .btn {
       margin-top: 20px;
-      background-color: #4CAF50;
+      background-color: #00cc66;
       border: none;
       color: white;
-      padding: 10px 20px;
+      padding: 12px 30px;
       font-size: 16px;
-      border-radius: 5px;
+      border-radius: 6px;
       cursor: pointer;
     }
     .btn:hover {
-      background-color: #45a049;
+      background-color: #00b359;
     }
     #status {
       margin-top: 15px;
@@ -77,7 +77,7 @@
 </head>
 <body>
   <div class="container">
-    <div id="captchaText" class="captcha-box">CAPTCHA</div>
+    <div id="captchaText" class="captcha-box">Loading...</div>
     <div>
       <input type="text" id="captchaInput" placeholder="Type the word above" />
       <div class="error" id="error"></div>
@@ -85,7 +85,24 @@
     <button class="btn" id="verifyBtn">Verify</button>
     <div id="status"></div>
   </div>  <script>
-    const captcha = "CAPTCHA";
+    const captchaList = [
+      { text: "VERIFY", font: "Orbitron" },
+      { text: "ACCESS", font: "Righteous" },
+      { text: "SECURE", font: "Black Ops One" },
+      { text: "CLICKME", font: "Rubik Mono One" },
+      { text: "ROBOTX", font: "Orbitron" },
+      { text: "ENTRY", font: "Righteous" },
+      { text: "LOGIN", font: "Rubik Mono One" },
+      { text: "BOTSAFE", font: "Black Ops One" }
+    ];
+
+    const selected = captchaList[Math.floor(Math.random() * captchaList.length)];
+    const captcha = selected.text;
+
+    const captchaBox = document.getElementById("captchaText");
+    captchaBox.style.fontFamily = `'${selected.font}', sans-serif`;
+    captchaBox.textContent = captcha;
+
     const input = document.getElementById("captchaInput");
     const error = document.getElementById("error");
 
@@ -98,11 +115,7 @@
           break;
         }
       }
-      if (!isCorrect) {
-        error.textContent = "Incorrect character entered.";
-      } else {
-        error.textContent = "";
-      }
+      error.textContent = isCorrect ? "" : "Incorrect character entered.";
     });
 
     document.getElementById("verifyBtn").addEventListener("click", async () => {
