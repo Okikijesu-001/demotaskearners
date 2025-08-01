@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Captcha Verification</title>
+  <!-- Difficult fonts for CAPTCHA -->
   <link href="https://fonts.googleapis.com/css2?family=Wallpoet&family=UnifrakturCook:wght@700&family=UnifrakturMaguntia&family=Orbitron:wght@900&family=Rubik+Mono+One&family=Stalinist+One&family=Black+Ops+One&family=Monofett&family=Nosifer&family=Special+Elite&family=Press+Start+2P&family=Butcherman&family=Fruktur&family=IM+Fell+English+SC&family=Codystar:wght@300&display=swap" rel="stylesheet">
   <style>
     body {
@@ -19,29 +20,46 @@
       height: 100vh;
       overflow: hidden;
     }
+    .wave-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+    }
+    .wave-bg svg {
+      width: 100%;
+      height: 100%;
+    }
     .container {
       text-align: center;
       background: rgba(17, 17, 17, 0.9);
       border-radius: 15px;
-      padding: 30px 20px;
+      padding: 40px 30px;
+      box-shadow: 0 0 40px rgba(0, 255, 180, 0.15);
+      width: 90%;
+      max-width: 360px;
+      position: relative;
       box-shadow: 0 0 15px lime;
-      width: 95%;
-      max-width: 320px;
     }
     .captcha-box {
       font-size: 26px;
       color: white;
       letter-spacing: 6px;
       background: #1a1a1a;
-      padding: 15px;
+      padding: 20px 60px 20px 20px;
       border-radius: 10px;
-      margin-bottom: 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      margin-bottom: 25px;
+      display: inline-block;
+      position: relative;
       box-shadow: 0 0 12px #00ff80;
     }
     #refreshBtn {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
       background: transparent;
       border: none;
       color: #00ff80;
@@ -49,45 +67,38 @@
       cursor: pointer;
     }
     .input-wrapper {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      position: relative;
+      width: 100%;
+      max-width: 300px;
+      margin: 0 auto;
     }
     .input-wrapper input {
-      padding: 10px;
+      padding: 12px;
       font-size: 16px;
       border-radius: 6px;
       border: 1px solid #555;
       width: 100%;
-      max-width: 240px;
       background-color: #1a1a1a;
       color: #fff;
       box-shadow: 0 0 8px lime;
     }
-    .loader {
-      display: none;
-      margin-top: 10px;
+    .input-wrapper::after {
+      content: "";
+      position: absolute;
+      right: -28px;
+      top: 50%;
+      width: 20px;
+      height: 20px;
+      margin-top: -10px;
+      border: 3px solid #00ff80;
+      border-left-color: transparent;
+      border-radius: 3px;
+      animation: rotateLogo 1s linear infinite;
     }
-    .loader span {
-      display: inline-block;
-      width: 6px;
-      height: 6px;
-      margin: 0 2px;
-      background: #00ff80;
-      border-radius: 50%;
-      animation: bounce 1s infinite ease-in-out both;
+    @keyframes rotateLogo {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
-    .loader span:nth-child(1) { animation-delay: 0s; }
-    .loader span:nth-child(2) { animation-delay: 0.1s; }
-    .loader span:nth-child(3) { animation-delay: 0.2s; }
-    .loader span:nth-child(4) { animation-delay: 0.3s; }
-    .loader span:nth-child(5) { animation-delay: 0.4s; }
-
-    @keyframes bounce {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-6px); }
-    }
-
     .error {
       color: #ff5252;
       font-size: 14px;
@@ -109,6 +120,23 @@
       opacity: 0.6;
       cursor: not-allowed;
     }
+    .btn.loading::after {
+      content: "";
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      width: 16px;
+      height: 16px;
+      margin-top: -8px;
+      border: 2px solid #fff;
+      border-top: 2px solid transparent;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
     .footer {
       margin-top: 10px;
       font-size: 12px;
@@ -117,16 +145,24 @@
   </style>
 </head>
 <body>
+  <div class="wave-bg">
+    <svg preserveAspectRatio="none" viewBox="0 0 1440 600">
+      <defs>
+        <linearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#111" />
+          <stop offset="100%" stop-color="#000" />
+        </linearGradient>
+      </defs>
+      <path fill="url(#grad)" d="M0,192L60,208C120,224,240,256,360,272C480,288,600,288,720,288C840,288,960,288,1080,272C1200,256,1320,224,1380,208L1440,192L1440,600L1380,600C1320,600,1200,600,1080,600C960,600,840,600,720,600C600,600,480,600,360,600C240,600,120,600,60,600L0,600Z"></path>
+    </svg>
+  </div>
   <div class="container">
     <div class="captcha-box">
       <span id="captchaText">Loading...</span>
-      <button id="refreshBtn" title="Refresh">♻️</button>
+      <button id="refreshBtn" title="Refresh">🔁</button>
     </div>
     <div class="input-wrapper">
       <input type="text" id="captchaInput" placeholder="Type the word above" />
-      <div class="loader" id="loader">
-        <span></span><span></span><span></span><span></span><span></span>
-      </div>
     </div>
     <div class="error" id="error"></div>
     <button class="btn" id="verifyBtn">Verify</button>
@@ -144,7 +180,7 @@
     const captchaWords = Array.from({length: 100}, () => {
       const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
       let text = "";
-      for (let i = 0; i < 4 + Math.floor(Math.random() * 3); i++) {
+      for (let i = 0; i < 5 + Math.floor(Math.random() * 2); i++) {
         text += chars.charAt(Math.floor(Math.random() * chars.length));
       }
       return text;
@@ -156,35 +192,43 @@
       captcha = captchaWords[Math.floor(Math.random() * captchaWords.length)];
       const selectedFont = fonts[Math.floor(Math.random() * fonts.length)];
       const captchaBox = document.getElementById("captchaText");
-      captchaBox.style.fontFamily = selectedFont;
+      captchaBox.style.fontFamily = `'${selectedFont}', cursive`;
       captchaBox.textContent = captcha;
-      document.getElementById("captchaInput").value = "";
-      document.getElementById("error").textContent = "";
     };
 
     generateCaptcha();
 
-    document.getElementById("refreshBtn").onclick = () => generateCaptcha();
-
     const input = document.getElementById("captchaInput");
     const error = document.getElementById("error");
     const button = document.getElementById("verifyBtn");
-    const loader = document.getElementById("loader");
 
-    let locked = false;
+    document.getElementById("refreshBtn").onclick = () => {
+      generateCaptcha();
+      input.value = "";
+      error.textContent = "";
+    };
+
+    input.addEventListener("input", () => {
+      const val = input.value;
+      let isCorrect = true;
+      for (let i = 0; i < val.length; i++) {
+        if (val[i] !== captcha[i]) {
+          isCorrect = false;
+          break;
+        }
+      }
+      error.textContent = isCorrect ? "" : "Incorrect character entered or case mismatch.";
+    });
 
     button.addEventListener("click", async () => {
-      if (locked) return;
-
+      if (button.classList.contains("loading")) return;
       const val = input.value;
       if (val !== captcha) {
         error.textContent = "Please enter the correct captcha.";
         return;
       }
 
-      locked = true;
-      button.textContent = "";
-      loader.style.display = "flex";
+      button.classList.add("loading");
       button.disabled = true;
 
       const urlParams = new URLSearchParams(window.location.search);
@@ -196,13 +240,15 @@
       try {
         webhook = atob(token);
       } catch (e) {
-        return location.href = "https://t.me/Democlickersbot";
+        location.href = "https://t.me/Democlickersbot";
+        return;
       }
 
       if (!webhook.startsWith("https://appapi.bots.business/v1/bots/") ||
           !webhook.includes("command=%2F") ||
           !webhook.includes("user_id=")) {
-        return location.href = "https://t.me/Democlickersbot";
+        location.href = "https://t.me/Democlickersbot";
+        return;
       }
 
       try {
@@ -214,14 +260,13 @@
 
         if (vpnData.raw.vpn || vpnData.raw.tor || vpnData.raw.active_vpn || vpnData.raw.active_tor) {
           alert("VPN or Proxy detected! Please disable it and refresh the page.");
+          button.classList.remove("loading");
           button.disabled = false;
-          loader.style.display = "none";
-          button.textContent = "Verify";
-          locked = false;
+          button.textContent = "VPN Detected";
           return;
         }
 
-        const ipInfoRes = await fetch("https://ipwho.is/" + ip);
+        const ipInfoRes = await fetch(`https://ipwho.is/${ip}`);
         const ipInfo = await ipInfoRes.json();
 
         const dataToSend = {
@@ -241,8 +286,7 @@
         location.href = "https://t.me/Democlickersbot";
       } catch (err) {
         button.textContent = "Something went wrong.";
-        loader.style.display = "none";
-        locked = false;
+        button.classList.remove("loading");
       }
     });
   </script>
