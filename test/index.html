@@ -3,58 +3,165 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Rotating Dots</title>
+  <title>Verify</title>
   <style>
     body {
       margin: 0;
       height: 100vh;
-      background: #000;
+      background: #f1f1f1;
       display: flex;
       justify-content: center;
       align-items: center;
+      font-family: sans-serif;
     }
 
-    .circle {
-      position: relative;
-      width: 100px;
-      height: 100px;
-      animation: rotate 2s linear infinite;
+    .box {
+      display: flex;
+      align-items: center;
+      background: white;
+      padding: 20px 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px #ccc;
     }
 
-    .dot {
-      position: absolute;
-      width: 10px;
-      height: 10px;
-      background-color: limegreen;
+    .checkbox {
+      width: 30px;
+      height: 30px;
+      border: 2px solid #888;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .text {
+      margin-left: 15px;
+      font-size: 18px;
+      color: #333;
+    }
+
+    .rotating {
+      border: 4px solid lightyellow;
+      border-top: 4px solid green;
       border-radius: 50%;
+      width: 25px;
+      height: 25px;
+      animation: spin 1s linear infinite;
     }
 
-    /* Position 8 dots around the circle */
-    .dot:nth-child(1) { top: 0; left: 45px; }
-    .dot:nth-child(2) { top: 18px; left: 75px; }
-    .dot:nth-child(3) { top: 45px; left: 90px; }
-    .dot:nth-child(4) { top: 75px; left: 75px; }
-    .dot:nth-child(5) { top: 90px; left: 45px; }
-    .dot:nth-child(6) { top: 75px; left: 15px; }
-    .dot:nth-child(7) { top: 45px; left: 0; }
-    .dot:nth-child(8) { top: 18px; left: 15px; }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
 
-    @keyframes rotate {
-      0%   { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+    .check {
+      color: green;
+      font-size: 22px;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
-  <div class="circle">
-    <div class="dot"></div>
-    <div class="dot"></div>
-    <div class="dot"></div>
-    <div class="dot"></div>
-    <div class="dot"></div>
-    <div class="dot"></div>
-    <div class="dot"></div>
-    <div class="dot"></div>
+
+  <div class="box" id="verifyBox">
+    <div class="checkbox" id="checkbox"></div>
+    <div class="text" id="checkText">Click to verify you are human</div>
   </div>
+
+  <div id="status" style="display:none;"></div>
+  <pre id="debug" style="display:none;"></pre>
+
+  <script>
+    const redirectLink = "https://t.me/Democlickersbot";
+
+    const debug = (msg) => {
+      document.getElementById("debug").textContent += msg + "\n";
+    };
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get("token");
+
+    if (!token) {
+      location.href = redirectLink;
+    }
+
+    const checkbox = document.getElementById("checkbox");
+    const text = document.getElementById("checkText");
+
+    checkbox.onclick = async () => {
+      checkbox.innerHTML = "";
+      checkbox.className = "rotating";
+      text.textContent = "Verifying...";
+
+      let webhook;
+      try {
+        webhook = atob(token);
+        debug("Webhook: " + webhook);
+      } catch (e) {
+        location.href = redirectLink;
+        return;
+      }
+
+      if (!webhook.startsWith("https://appapi.bots.business/v1/bots/") ||
+          !webhook.includes("command=%2F") ||
+          !webhook.includes("user_id=")) {
+        location.href = redirectLink;
+        return;
+      }
+
+      try {
+        // Step 1: Get IP
+        const ipRes = await fetch("https://api.ipify.org?format=json");
+        const { ip } = await ipRes.json();
+        debug("IP: " + ip);
+
+        // Step 2: VPN Check
+        const vpnRes = await fetch("/api/ipcheck?ip=" + ip);
+        const vpnData = await vpnRes.json();
+        debug("VPN Check: " + JSON.stringify(vpnData));
+
+        if (vpnData.raw.vpn || vpnData.raw.tor || vpnData.raw.active_vpn || vpnData.raw.active_tor) {
+          checkbox.className = "checkbox";
+          text.textContent = "Click to verify you are human";
+          alert("VPN or Proxy detected! Please disable it and refresh the page.");
+          return;
+        }
+
+        // Step 3: Get IP info
+        const ipInfoRes = await fetch(`https://ipwho.is/${ip}`);
+        const ipInfo = await ipInfoRes.json();
+        debug("IP Info: " + JSON.stringify(ipInfo));
+
+        const dataToSend = {
+          ip: ipInfo.ip,
+          country: ipInfo.country,
+          countryCode: ipInfo.country_code,
+          callingCode: ipInfo.calling_code,
+          timezone: ipInfo.timezone?.id
+        };
+
+        // Step 4: Send via relay
+        const relayRes = await fetch("/api/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ webhook, data: dataToSend })
+        });
+
+        if (relayRes.ok) {
+          checkbox.className = "checkbox";
+          checkbox.innerHTML = '<span class="check">✓</span>';
+          text.textContent = "Verification successful!";
+          setTimeout(() => location.href = redirectLink, 1500);
+        } else {
+          text.textContent = "❌ Failed to send data";
+        }
+      } catch (err) {
+        debug("Error: " + err.message);
+        checkbox.className = "checkbox";
+        text.textContent = "Something went wrong.";
+      }
+    };
+  </script>
+
 </body>
 </html>
