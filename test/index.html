@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Rolling Dots</title>
+  <title>Rotating Dots</title>
   <style>
     body {
       margin: 0;
@@ -14,29 +14,47 @@
       align-items: center;
     }
 
-    .dots {
-      font-size: 4rem;
-      font-weight: bold;
-      color: green;
-      font-family: monospace;
-      letter-spacing: 10px;
+    .circle {
+      position: relative;
+      width: 100px;
+      height: 100px;
+      animation: rotate 2s linear infinite;
     }
 
-    @keyframes dots {
-      0%   { content: "."; }
-      25%  { content: ".."; }
-      50%  { content: "..."; }
-      75%  { content: "...."; }
-      100% { content: "."; }
+    .dot {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background-color: limegreen;
+      border-radius: 50%;
     }
 
-    .dots::after {
-      content: ".";
-      animation: dots 1.5s steps(4, end) infinite;
+    /* Position 8 dots around the circle */
+    .dot:nth-child(1) { top: 0; left: 45px; }
+    .dot:nth-child(2) { top: 18px; left: 75px; }
+    .dot:nth-child(3) { top: 45px; left: 90px; }
+    .dot:nth-child(4) { top: 75px; left: 75px; }
+    .dot:nth-child(5) { top: 90px; left: 45px; }
+    .dot:nth-child(6) { top: 75px; left: 15px; }
+    .dot:nth-child(7) { top: 45px; left: 0; }
+    .dot:nth-child(8) { top: 18px; left: 15px; }
+
+    @keyframes rotate {
+      0%   { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
   </style>
 </head>
 <body>
-  <div class="dots"></div>
+  <div class="circle">
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+  </div>
 </body>
 </html>
