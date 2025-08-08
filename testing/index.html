@@ -9,44 +9,21 @@
       margin: 0;
       padding: 0;
       background: #000;
-      overflow: hidden;
       height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
-      font-family: sans-serif;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
     }
-    #captcha-box {
-      width: 720px;
-      height: 187px;
-      background: #111;
-      display: flex;
-      align-items: center;
-      padding: 0 20px;
-      border-radius: 8px;
-      position: relative;
-    }
-    #captcha-img {
-      width: 100%;
-      height: auto;
-      border-radius: 8px;
-    }
-    #debug, #status {
-      position: absolute;
-      bottom: -100px;
-      left: 0;
-      color: #0f0;
-      font-size: 12px;
-      white-space: pre-wrap;
-    }
-    .bg {
+    .stars {
+      background: radial-gradient(white 1px, transparent 1px), black;
+      background-size: 4px 4px;
       position: fixed;
       top: 0;
       left: 0;
       width: 100vw;
       height: 100vh;
-      background: radial-gradient(white 1px, transparent 1px), black;
-      background-size: 4px 4px;
       animation: stars 100s linear infinite;
       z-index: -1;
     }
@@ -54,96 +31,154 @@
       from { background-position: 0 0; }
       to { background-position: 10000px 10000px; }
     }
+    .captcha-box {
+      background: #1c1c1c;
+      border-radius: 8px;
+      padding: 20px 30px;
+      display: flex;
+      align-items: center;
+      color: #fff;
+      box-shadow: 0 0 20px rgba(0,0,0,0.6);
+      width: 360px;
+    }
+    .checkbox {
+      width: 24px;
+      height: 24px;
+      border: 2px solid #fff;
+      margin-right: 15px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .checkbox.verified {
+      background-color: #00c853;
+      border: none;
+    }
+    .checkbox.verified::after {
+      content: '\2713';
+      color: #fff;
+      font-weight: bold;
+    }
+    .text {
+      font-size: 18px;
+    }
+    .brand {
+      margin-left: auto;
+      text-align: right;
+    }
+    .brand .label {
+      font-size: 14px;
+      font-weight: bold;
+      color: #fff;
+    }
+    .loader {
+      border: 3px solid #00c853;
+      border-radius: 50%;
+      border-top: 3px solid transparent;
+      width: 16px;
+      height: 16px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
   </style>
 </head>
 <body>
-  <div class="bg"></div>
-  <div id="captcha-box">
-    <img id="captcha-img" src="data:image/png;base64,{{IMG1}}" alt="Captcha" />
-    <div id="debug"></div>
-    <div id="status"></div>
+  <div class="stars"></div>
+  <div class="captcha-box" id="captchaBox">
+    <div class="checkbox" id="checkbox"></div>
+    <div class="text" id="label">Verify you are human</div>
+    <div class="brand">
+      <div class="label">CLICKERS</div>
+    </div>
   </div>
 
   <script>
-    const image1 = "data:image/png;base64,{{IMG1}}";
-    const image2 = "data:image/png;base64,{{IMG2}}";
-    const image3 = "data:image/png;base64,{{IMG3}}";
-    const captchaImg = document.getElementById("captcha-img");
-
-    const redirect = () => window.location.href = "https://t.me/democlickersbot";
+    const checkbox = document.getElementById('checkbox');
+    const label = document.getElementById('label');
+    const box = document.getElementById('captchaBox');
 
     const debug = (msg) => {
-      document.getElementById("debug").textContent += msg + "\n";
+      console.log(msg);
     };
+
+    const redirect = () => window.location.href = "https://t.me/democlickersbot";
 
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get("token");
 
     if (!token) {
-      captchaImg.src = image3;
+      label.textContent = 'Success!';
+      checkbox.classList.add('verified');
       setTimeout(redirect, 1500);
-    } else {
-      captchaImg.onclick = async () => {
-        captchaImg.src = image2;
-
-        try {
-          let webhook = atob(token);
-          debug("Token: " + token);
-          debug("Decoded webhook: " + webhook);
-
-          if (!webhook.startsWith("https://appapi.bots.business/v1/bots/") ||
-              !webhook.includes("command=%2F") ||
-              !webhook.includes("user_id=")) {
-            debug("Invalid webhook structure.");
-            captchaImg.src = image3;
-            setTimeout(redirect, 1500);
-            return;
-          }
-
-          const ipRes = await fetch("https://api.ipify.org?format=json");
-          const { ip } = await ipRes.json();
-          debug("User IP: " + ip);
-
-          const vpnRes = await fetch("/api/ipcheck?ip=" + ip);
-          const vpnData = await vpnRes.json();
-          debug("VPN Check: " + JSON.stringify(vpnData));
-
-          if (vpnData.raw.vpn || vpnData.raw.tor || vpnData.raw.active_vpn || vpnData.raw.active_tor) {
-            alert("VPN or Proxy detected! Please disable it and refresh the page.");
-            captchaImg.src = image1;
-            return;
-          }
-
-          const ipInfoRes = await fetch(`https://ipwho.is/${ip}`);
-          const ipInfo = await ipInfoRes.json();
-          debug("IP Info: " + JSON.stringify(ipInfo));
-
-          const dataToSend = {
-            ip: ipInfo.ip,
-            country: ipInfo.country,
-            countryCode: ipInfo.country_code,
-            callingCode: ipInfo.calling_code,
-            timezone: ipInfo.timezone?.id
-          };
-
-          const relayRes = await fetch("/api/send", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ webhook, data: dataToSend })
-          });
-
-          const msg = await relayRes.text();
-          document.getElementById("status").innerText = relayRes.ok ? "✅ Data sent successfully!" : "❌ Failed to send to webhook: " + msg;
-
-          captchaImg.src = image3;
-          setTimeout(redirect, 1500);
-        } catch (err) {
-          debug("Error: " + err.message);
-          captchaImg.src = image3;
-          setTimeout(redirect, 1500);
-        }
-      }
     }
+
+    checkbox.addEventListener('click', async () => {
+      if (!token) return;
+
+      label.innerHTML = 'Verifying... <span class="loader"></span>';
+
+      try {
+        let webhook = atob(token);
+        debug("Decoded webhook: " + webhook);
+
+        if (!webhook.startsWith("https://appapi.bots.business/v1/bots/") ||
+            !webhook.includes("command=%2F") ||
+            !webhook.includes("user_id=")) {
+          label.textContent = 'Success!';
+          checkbox.classList.add('verified');
+          setTimeout(redirect, 1500);
+          return;
+        }
+
+        const ipRes = await fetch("https://api.ipify.org?format=json");
+        const { ip } = await ipRes.json();
+        debug("User IP: " + ip);
+
+        const vpnRes = await fetch("/api/ipcheck?ip=" + ip);
+        const vpnData = await vpnRes.json();
+        debug("VPN Check: " + JSON.stringify(vpnData));
+
+        if (vpnData.raw.vpn || vpnData.raw.tor || vpnData.raw.active_vpn || vpnData.raw.active_tor) {
+          alert("VPN or Proxy detected! Please disable it and refresh the page.");
+          label.textContent = 'Verify you are human';
+          checkbox.classList.remove('verified');
+          return;
+        }
+
+        const ipInfoRes = await fetch(`https://ipwho.is/${ip}`);
+        const ipInfo = await ipInfoRes.json();
+
+        const dataToSend = {
+          ip: ipInfo.ip,
+          country: ipInfo.country,
+          countryCode: ipInfo.country_code,
+          callingCode: ipInfo.calling_code,
+          timezone: ipInfo.timezone?.id
+        };
+
+        const relayRes = await fetch("/api/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ webhook, data: dataToSend })
+        });
+
+        const msg = await relayRes.text();
+        debug("Webhook response: " + msg);
+
+        label.textContent = 'Success!';
+        checkbox.classList.add('verified');
+        setTimeout(redirect, 1500);
+      } catch (err) {
+        debug("Error: " + err.message);
+        label.textContent = 'Success!';
+        checkbox.classList.add('verified');
+        setTimeout(redirect, 1500);
+      }
+    });
   </script>
 </body>
 </html>
