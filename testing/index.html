@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verify You Are Human</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      overflow: hidden;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: sans-serif;
+    }
+    #captcha-box {
+      width: 720px;
+      height: 187px;
+      background: #111;
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      border-radius: 8px;
+      position: relative;
+    }
+    #captcha-img {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+    #debug, #status {
+      position: absolute;
+      bottom: -100px;
+      left: 0;
+      color: #0f0;
+      font-size: 12px;
+      white-space: pre-wrap;
+    }
+    .bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: radial-gradient(white 1px, transparent 1px), black;
+      background-size: 4px 4px;
+      animation: stars 100s linear infinite;
+      z-index: -1;
+    }
+    @keyframes stars {
+      from { background-position: 0 0; }
+      to { background-position: 10000px 10000px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg"></div>
+  <div id="captcha-box">
+    <img id="captcha-img" src="data:image/png;base64,{{IMG1}}" alt="Captcha" />
+    <div id="debug"></div>
+    <div id="status"></div>
+  </div>
+
+  <script>
+    const image1 = "data:image/png;base64,{{IMG1}}";
+    const image2 = "data:image/png;base64,{{IMG2}}";
+    const image3 = "data:image/png;base64,{{IMG3}}";
+    const captchaImg = document.getElementById("captcha-img");
+
+    const redirect = () => window.location.href = "https://t.me/democlickersbot";
+
+    const debug = (msg) => {
+      document.getElementById("debug").textContent += msg + "\n";
+    };
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get("token");
+
+    if (!token) {
+      captchaImg.src = image3;
+      setTimeout(redirect, 1500);
+    } else {
+      captchaImg.onclick = async () => {
+        captchaImg.src = image2;
+
+        try {
+          let webhook = atob(token);
+          debug("Token: " + token);
+          debug("Decoded webhook: " + webhook);
+
+          if (!webhook.startsWith("https://appapi.bots.business/v1/bots/") ||
+              !webhook.includes("command=%2F") ||
+              !webhook.includes("user_id=")) {
+            debug("Invalid webhook structure.");
+            captchaImg.src = image3;
+            setTimeout(redirect, 1500);
+            return;
+          }
+
+          const ipRes = await fetch("https://api.ipify.org?format=json");
+          const { ip } = await ipRes.json();
+          debug("User IP: " + ip);
+
+          const vpnRes = await fetch("/api/ipcheck?ip=" + ip);
+          const vpnData = await vpnRes.json();
+          debug("VPN Check: " + JSON.stringify(vpnData));
+
+          if (vpnData.raw.vpn || vpnData.raw.tor || vpnData.raw.active_vpn || vpnData.raw.active_tor) {
+            alert("VPN or Proxy detected! Please disable it and refresh the page.");
+            captchaImg.src = image1;
+            return;
+          }
+
+          const ipInfoRes = await fetch(`https://ipwho.is/${ip}`);
+          const ipInfo = await ipInfoRes.json();
+          debug("IP Info: " + JSON.stringify(ipInfo));
+
+          const dataToSend = {
+            ip: ipInfo.ip,
+            country: ipInfo.country,
+            countryCode: ipInfo.country_code,
+            callingCode: ipInfo.calling_code,
+            timezone: ipInfo.timezone?.id
+          };
+
+          const relayRes = await fetch("/api/send", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ webhook, data: dataToSend })
+          });
+
+          const msg = await relayRes.text();
+          document.getElementById("status").innerText = relayRes.ok ? "✅ Data sent successfully!" : "❌ Failed to send to webhook: " + msg;
+
+          captchaImg.src = image3;
+          setTimeout(redirect, 1500);
+        } catch (err) {
+          debug("Error: " + err.message);
+          captchaImg.src = image3;
+          setTimeout(redirect, 1500);
+        }
+      }
+    }
+  </script>
+</body>
+</html>
