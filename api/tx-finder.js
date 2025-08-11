@@ -3,7 +3,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { token, amount } = req.body;
+  const { token, amount, toAddress } = req.body;
   if (!token || !amount) {
     return res.status(400).json({ error: 'Missing token or amount' });
   }
@@ -21,11 +21,18 @@ export default async function handler(req, res) {
 
       if (!data.data || data.data.length === 0) break; // No more transactions
 
-      found = data.data.find(tx =>
-        tx.contractType === 1 && // normal transfer
-        tx.tokenInfo?.tokenType === token &&
-        Number(tx.amount) === amountInSun
-      );
+      found = data.data.find(tx => {
+        const tokenTypeMatch =
+          tx.tokenInfo?.tokenType === token ||
+          (token === 'trc10' && tx.tokenInfo?.tokenType === 'trx');
+
+        const amountMatch = Number(tx.amount) === amountInSun;
+        const addressMatch = toAddress
+          ? tx.transferToAddress?.toLowerCase() === toAddress.toLowerCase()
+          : true;
+
+        return tx.contractType === 1 && tokenTypeMatch && amountMatch && addressMatch;
+      });
 
       if (found) break;
       start += limit; // Next page
@@ -33,9 +40,10 @@ export default async function handler(req, res) {
 
     if (!found) {
       return res.status(404).json({
-        token: token,
-        amount: amount,
-        error: 'Transaction not found for token: ${token}, amount: ${amount}' });
+       token: token,
+       amount: amount,
+       error: `Transaction not found for token: ${token}, amount: ${amount}`
+      });
     }
 
     return res.json({
