@@ -32,7 +32,10 @@ export default async function handler(req, res) {
     }
 
     if (!found) {
-      return res.status(404).json({ error: 'Transaction not found for token: ${token}, amount: ${amount}' });
+      return res.status(404).json({
+        token: token,
+        amount: amount,
+        error: 'Transaction not found for token: ${token}, amount: ${amount}' });
     }
 
     return res.json({
