@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Captcha Verification</title>
+
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Wallpoet&family=UnifrakturCook:wght@700&family=UnifrakturMaguntia&family=Orbitron:wght@900&family=Rubik+Mono+One&family=Stalinist+One&family=Black+Ops+One&family=Monofett&family=Nosifer&family=Special+Elite&family=Press+Start+2P&family=Butcherman&family=Fruktur&family=IM+Fell+English+SC&family=Codystar:wght@300&display=swap" rel="stylesheet">
+
+<style>
+body {
+    margin: 0;
+    padding: 0;
+    background: black;
+    color: white;
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+.captcha-container {
+    text-align: center;
+    width: 90%;
+    max-width: 400px;
+}
+.captcha-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: black;
+    border-radius: 10px;
+    padding: 10px;
+    margin-bottom: 20px;
+    height: 60px;
+}
+#captchaText {
+    color: white;
+    letter-spacing: 5px;
+    flex: 1;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 28px;
+}
+#refreshBtn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.refresh-icon {
+    width: 24px;
+    height: 24px;
+    border: 2px solid white;
+    border-radius: 50%;
+    position: relative;
+}
+.refresh-icon::before {
+    content: '';
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-top: 2px solid white;
+    border-right: 2px solid white;
+    top: -4px;
+    right: 2px;
+    transform: rotate(45deg);
+}
+.refresh-icon::after {
+    content: '';
+    position: absolute;
+    border: 2px solid transparent;
+    border-top-color: white;
+    border-right-color: white;
+    top: -2px;
+    right: -2px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+.input-wrapper {
+    margin-bottom: 10px;
+}
+.input-wrapper input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid white;
+    background: white;
+    color: black;
+    font-size: 16px;
+}
+.error {
+    color: red;
+    font-size: 14px;
+    min-height: 16px;
+}
+.btn {
+    margin-top: 10px;
+    background: limegreen;
+    color: white;
+    border: none;
+    padding: 10px 25px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+}
+.blurred {
+    filter: blur(6px);
+    pointer-events: none;
+}
+
+/* Success verification style */
+.loader {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 9999;
+    text-align: center;
+    background-color: #1a1a1a;
+    padding: 30px;
+    border-radius: 10px;
+    border: 1px solid #333;
+    width: 300px;
+}
+.success-check {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 4px solid #4CAF50;
+    margin: 0 auto;
+    position: relative;
+}
+.success-check::after {
+    content: '';
+    position: absolute;
+    width: 18px;
+    height: 36px;
+    border-right: 4px solid #4CAF50;
+    border-bottom: 4px solid #4CAF50;
+    top: 8px;
+    left: 18px;
+    transform: rotate(45deg);
+}
+.loader h2 {
+    margin: 15px 0 5px;
+    font-size: 20px;
+    color: #9fff9f;
+}
+.loader p {
+    color: white;
+    margin: 0;
+}
+</style>
+</head>
+<body>
+
+<div id="mainContent" class="captcha-container">
+    <div class="captcha-box">
+        <span id="captchaText">Loading...</span>
+        <button id="refreshBtn" aria-label="Refresh">
+            <div class="refresh-icon"></div>
+        </button>
+    </div>
+    <div class="input-wrapper">
+        <input type="text" id="captchaInput" placeholder="Type the text exactly as shown">
+    </div>
+    <div class="error" id="error"></div>
+    <button class="btn" id="verifyBtn">Verify</button>
+</div>
+
+<div class="loader" id="loader">
+    <div class="success-check"></div>
+    <h2>Verification successful!</h2>
+    <p>Please return back to the bot</p>
+</div>
+
+<script>
+const fonts = [
+    "Wallpoet", "UnifrakturCook", "UnifrakturMaguntia", "Orbitron",
+    "Rubik Mono One", "Stalinist One", "Black Ops One", "Monofett",
+    "Nosifer", "Special Elite", "Press Start 2P", "Butcherman",
+    "Fruktur", "IM Fell English SC", "Codystar"
+];
+
+// Generate 100 random captcha words
+const captchaWords = Array.from({length: 100}, () => {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    let text = "";
+    for (let i = 0; i < 4 + Math.floor(Math.random() * 3); i++) {
+        text += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return text;
+});
+
+let captcha = "";
+
+function adjustFontSize() {
+    const captchaBox = document.getElementById("captchaText");
+    let size = 28;
+    captchaBox.style.fontSize = size + "px";
+    while (captchaBox.scrollWidth > captchaBox.clientWidth && size > 10) {
+        size--;
+        captchaBox.style.fontSize = size + "px";
+    }
+}
+
+function generateCaptcha() {
+    captcha = captchaWords[Math.floor(Math.random() * captchaWords.length)];
+    const selectedFont = fonts[Math.floor(Math.random() * fonts.length)];
+    const captchaBox = document.getElementById("captchaText");
+    captchaBox.style.fontFamily = `'${selectedFont}', cursive`;
+    captchaBox.textContent = captcha;
+    document.getElementById("captchaInput").value = "";
+    document.getElementById("error").textContent = "";
+    adjustFontSize();
+}
+
+generateCaptcha();
+
+document.getElementById("refreshBtn").onclick = generateCaptcha;
+
+// Case-sensitive input check
+document.getElementById("captchaInput").addEventListener("input", function() {
+    let val = this.value;
+    let matchSoFar = captcha.substring(0, val.length) === val; // strict match
+    document.getElementById("error").textContent = matchSoFar ? "" : "Incorrect";
+});
+
+document.getElementById("verifyBtn").addEventListener("click", function() {
+    const val = document.getElementById("captchaInput").value;
+    if (val !== captcha) {
+        document.getElementById("error").textContent = "Incorrect";
+        return;
+    }
+    document.getElementById("mainContent").classList.add("blurred");
+    document.getElementById("loader").style.display = "block";
+});
+</script>
+
+</body>
+</html>
