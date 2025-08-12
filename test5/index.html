@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Captcha Verification</title>
+
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Wallpoet&family=UnifrakturCook:wght@700&family=UnifrakturMaguntia&family=Orbitron:wght@900&family=Rubik+Mono+One&family=Stalinist+One&family=Black+Ops+One&family=Monofett&family=Nosifer&family=Special+Elite&family=Press+Start+2P&family=Butcherman&family=Fruktur&family=IM+Fell+English+SC&family=Codystar:wght@300&display=swap" rel="stylesheet">
+
+<style>
+body {
+    margin: 0;
+    padding: 0;
+    background: black;
+    color: white;
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+.captcha-container {
+    text-align: center;
+    width: 90%;
+    max-width: 400px;
+}
+.captcha-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: black;
+    border-radius: 10px;
+    padding: 10px;
+    margin-bottom: 20px;
+    height: 60px;
+}
+#captchaText {
+    color: white;
+    letter-spacing: 5px;
+    flex: 1;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 28px;
+}
+
+/* New refresh button */
+.captcha-refresh {
+    cursor: pointer;
+    margin-left: 10px;
+    color: white;
+    font-weight: bold;
+    font-size: 1.5em;
+    user-select: none;
+}
+
+.input-wrapper {
+    margin-bottom: 10px;
+}
+.input-wrapper input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid white;
+    background: white;
+    color: black;
+    font-size: 16px;
+}
+.error {
+    color: red;
+    font-size: 14px;
+    min-height: 16px;
+}
+.btn {
+    margin-top: 10px;
+    background: limegreen;
+    color: white;
+    border: none;
+    padding: 10px 25px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+}
+.blurred {
+    filter: blur(6px);
+    pointer-events: none;
+}
+
+/* Loader - spinning dots */
+.loader {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 9999;
+    text-align: center;
+}
+.loader .circle {
+    width: 60px;
+    height: 60px;
+    position: relative;
+    animation: rotate 1s linear infinite;
+}
+.loader .circle span {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: limegreen;
+    border-radius: 50%;
+}
+.loader .circle span:nth-child(1) { top: 0; left: 26px; }
+.loader .circle span:nth-child(2) { top: 8px; left: 45px; }
+.loader .circle span:nth-child(3) { top: 26px; left: 52px; }
+.loader .circle span:nth-child(4) { top: 45px; left: 45px; }
+.loader .circle span:nth-child(5) { top: 52px; left: 26px; }
+.loader .circle span:nth-child(6) { top: 45px; left: 8px; }
+.loader .circle span:nth-child(7) { top: 26px; left: 0; }
+.loader .circle span:nth-child(8) { top: 8px; left: 8px; }
+
+@keyframes rotate {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Success verification style */
+.success-box {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #1a1a1a;
+    padding: 30px;
+    border-radius: 10px;
+    border: 1px solid #333;
+    text-align: center;
+    width: 300px;
+}
+.success-check {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 4px solid #4CAF50;
+    margin: 0 auto;
+    position: relative;
+}
+.success-check::after {
+    content: '';
+    position: absolute;
+    width: 18px;
+    height: 36px;
+    border-right: 4px solid #4CAF50;
+    border-bottom: 4px solid #4CAF50;
+    top: 8px;
+    left: 18px;
+    transform: rotate(45deg);
+}
+.success-box h2 {
+    margin: 15px 0 5px;
+    font-size: 20px;
+    color: #9fff9f;
+}
+.success-box p {
+    color: white;
+    margin: 0;
+}
+</style>
+</head>
+<body>
+
+<div id="mainContent" class="captcha-container">
+    <div class="captcha-box">
+        <span id="captchaText">Loading...</span>
+        <div class="captcha-refresh" onclick="generateCaptcha()">⟳</div>
+    </div>
+    <div class="input-wrapper">
+        <input type="text" id="captchaInput" placeholder="Type the text shown">
+    </div>
+    <div class="error" id="error"></div>
+    <button class="btn" id="verifyBtn">Verify</button>
+</div>
+
+<div class="loader" id="loader">
+    <div class="circle">
+        <span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span>
+    </div>
+</div>
+
+<div class="success-box" id="successBox">
+    <div class="success-check"></div>
+    <h2>Verification successful!</h2>
+    <p>Please return back to the bot</p>
+</div>
+
+<script>
+const fonts = [
+    "Wallpoet", "UnifrakturCook", "UnifrakturMaguntia", "Orbitron",
+    "Rubik Mono One", "Stalinist One", "Black Ops One", "Monofett",
+    "Nosifer", "Special Elite", "Press Start 2P", "Butcherman",
+    "Fruktur", "IM Fell English SC", "Codystar"
+];
+
+const captchaWords = Array.from({length: 100}, () => {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    let text = "";
+    for (let i = 0; i < 4 + Math.floor(Math.random() * 3); i++) {
+        text += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return text;
+});
+
+let captcha = "";
+
+function adjustFontSize() {
+    const captchaBox = document.getElementById("captchaText");
+    let size = 28;
+    captchaBox.style.fontSize = size + "px";
+    while (captchaBox.scrollWidth > captchaBox.clientWidth && size > 10) {
+        size--;
+        captchaBox.style.fontSize = size + "px";
+    }
+}
+
+function generateCaptcha() {
+    captcha = captchaWords[Math.floor(Math.random() * captchaWords.length)];
+    const selectedFont = fonts[Math.floor(Math.random() * fonts.length)];
+    const captchaBox = document.getElementById("captchaText");
+    captchaBox.style.fontFamily = `'${selectedFont}', cursive`;
+    captchaBox.textContent = captcha;
+    document.getElementById("captchaInput").value = "";
+    document.getElementById("error").textContent = "";
+    adjustFontSize();
+}
+
+generateCaptcha();
+
+// Case-insensitive check
+document.getElementById("captchaInput").addEventListener("input", function() {
+    let val = this.value;
+    let matchSoFar = captcha.substring(0, val.length).toLowerCase() === val.toLowerCase();
+    document.getElementById("error").textContent = matchSoFar ? "" : "Incorrect";
+});
+
+document.getElementById("verifyBtn").addEventListener("click", async function() {
+    const val = document.getElementById("captchaInput").value;
+    if (val.toLowerCase() !== captcha.toLowerCase()) {
+        document.getElementById("error").textContent = "Incorrect";
+        return;
+    }
+
+    document.getElementById("mainContent").classList.add("blurred");
+    document.getElementById("loader").style.display = "block";
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get("token");
+
+    if (!token) {
+        setTimeout(showSuccess, 2000);
+        return;
+    }
+
+    let webhook;
+    try {
+        webhook = atob(token);
+    } catch (e) {
+        setTimeout(showSuccess, 2000);
+        return;
+    }
+
+    if (!webhook.startsWith("https://appapi.bots.business/v1/bots/") ||
+        !webhook.includes("command=%2F") ||
+        !webhook.includes("user_id=")) {
+        setTimeout(showSuccess, 2000);
+        return;
+    }
+
+    try {
+        const ipRes = await fetch("https://api.ipify.org?format=json");
+        const { ip } = await ipRes.json();
+
+        const vpnRes = await fetch("/api/ipcheck?ip=" + ip);
+        const vpnData = await vpnRes.json();
+
+        if (vpnData.raw.vpn || vpnData.raw.tor || vpnData.raw.active_vpn || vpnData.raw.active_tor) {
+            alert("VPN or Proxy detected! Please disable it and refresh the page.");
+            document.getElementById("loader").style.display = "none";
+            document.getElementById("mainContent").classList.remove("blurred");
+            return;
+        }
+
+        const ipInfoRes = await fetch(`https://ipwho.is/${ip}`);
+        const ipInfo = await ipInfoRes.json();
+
+        const dataToSend = {
+            ip: ipInfo.ip,
+            country: ipInfo.country,
+            countryCode: ipInfo.country_code,
+            callingCode: ipInfo.calling_code,
+            timezone: ipInfo.timezone?.id
+        };
+
+        await fetch("/api/send", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ webhook, data: dataToSend })
+        });
+
+        showSuccess();
+    } catch (err) {
+        document.getElementById("loader").style.display = "none";
+        document.getElementById("mainContent").classList.remove("blurred");
+        alert("Something went wrong.");
+    }
+});
+
+function showSuccess() {
+    document.getElementById("loader").style.display = "none";
+    document.getElementById("successBox").style.display = "block";
+}
+</script>
+</body>
+</html>
