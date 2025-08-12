@@ -241,13 +241,13 @@ generateCaptcha();
 // Case-insensitive check
 document.getElementById("captchaInput").addEventListener("input", function() {
     let val = this.value;
-    let matchSoFar = captcha.substring(0, val.length).toLowerCase() === val.toLowerCase();
+    let matchSoFar = captcha.substring(0, val.length) === val;
     document.getElementById("error").textContent = matchSoFar ? "" : "Incorrect";
 });
 
 document.getElementById("verifyBtn").addEventListener("click", async function() {
     const val = document.getElementById("captchaInput").value;
-    if (val.toLowerCase() !== captcha.toLowerCase()) {
+    if (val !== captcha) {
         document.getElementById("error").textContent = "Incorrect";
         return;
     }
