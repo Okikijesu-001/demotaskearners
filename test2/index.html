@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Captcha Verification</title>
+
+<!-- Difficult fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Wallpoet&family=UnifrakturCook:wght@700&family=UnifrakturMaguntia&family=Orbitron:wght@900&family=Rubik+Mono+One&family=Stalinist+One&family=Black+Ops+One&family=Monofett&family=Nosifer&family=Special+Elite&family=Press+Start+2P&family=Butcherman&family=Fruktur&family=IM+Fell+English+SC&family=Codystar:wght@300&display=swap" rel="stylesheet">
+
+<style>
+body {
+    margin: 0;
+    padding: 0;
+    background: black;
+    color: white;
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+.captcha-container {
+    text-align: center;
+}
+.captcha-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: black;
+    border-radius: 10px;
+    padding: 10px 15px;
+    margin-bottom: 20px;
+    border: 1px solid white;
+}
+#captchaText {
+    color: white;
+    font-size: 28px;
+    letter-spacing: 5px;
+    flex: 1;
+    text-align: center;
+}
+#refreshBtn {
+    background: transparent;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: lime;
+}
+.input-wrapper {
+    margin-bottom: 10px;
+}
+.input-wrapper input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid white;
+    background: white;
+    color: black; /* User text visible */
+}
+.error {
+    color: red;
+    font-size: 14px;
+    min-height: 16px;
+}
+.btn {
+    margin-top: 10px;
+    background: limegreen;
+    color: white;
+    border: none;
+    padding: 10px 25px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+}
+.blurred {
+    filter: blur(6px);
+    pointer-events: none;
+}
+
+/* Loader (circle dots) */
+.loader {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 9999;
+}
+.loader .circle {
+    width: 60px;
+    height: 60px;
+    position: relative;
+}
+.loader .circle span {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: limegreen;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+.loader .circle span:nth-child(1) { top: 0; left: 26px; animation-delay: 0s; }
+.loader .circle span:nth-child(2) { top: 8px; left: 45px; animation-delay: 0.1s; }
+.loader .circle span:nth-child(3) { top: 26px; left: 52px; animation-delay: 0.2s; }
+.loader .circle span:nth-child(4) { top: 45px; left: 45px; animation-delay: 0.3s; }
+.loader .circle span:nth-child(5) { top: 52px; left: 26px; animation-delay: 0.4s; }
+.loader .circle span:nth-child(6) { top: 45px; left: 8px; animation-delay: 0.5s; }
+.loader .circle span:nth-child(7) { top: 26px; left: 0; animation-delay: 0.6s; }
+.loader .circle span:nth-child(8) { top: 8px; left: 8px; animation-delay: 0.7s; }
+
+@keyframes spin {
+    0% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(0.3); opacity: 0.3; }
+}
+</style>
+</head>
+<body>
+
+<div id="mainContent" class="captcha-container">
+    <div class="captcha-box">
+        <span id="captchaText">Loading...</span>
+        <button id="refreshBtn">🔁</button>
+    </div>
+    <div class="input-wrapper">
+        <input type="text" id="captchaInput" placeholder="Type the word above">
+    </div>
+    <div class="error" id="error"></div>
+    <button class="btn" id="verifyBtn">Verify</button>
+</div>
+
+<div class="loader" id="loader">
+    <div class="circle">
+        <span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span>
+    </div>
+</div>
+
+<script>
+const fonts = [
+    "Wallpoet", "UnifrakturCook", "UnifrakturMaguntia", "Orbitron",
+    "Rubik Mono One", "Stalinist One", "Black Ops One", "Monofett",
+    "Nosifer", "Special Elite", "Press Start 2P", "Butcherman",
+    "Fruktur", "IM Fell English SC", "Codystar"
+];
+
+const captchaWords = Array.from({length: 100}, () => {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    let text = "";
+    for (let i = 0; i < 4 + Math.floor(Math.random() * 3); i++) {
+        text += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return text;
+});
+
+let captcha = "";
+
+function generateCaptcha() {
+    captcha = captchaWords[Math.floor(Math.random() * captchaWords.length)];
+    const selectedFont = fonts[Math.floor(Math.random() * fonts.length)];
+    const captchaBox = document.getElementById("captchaText");
+    captchaBox.style.fontFamily = `'${selectedFont}', cursive`;
+    captchaBox.textContent = captcha;
+    document.getElementById("captchaInput").value = "";
+    document.getElementById("error").textContent = "";
+}
+
+generateCaptcha();
+
+document.getElementById("refreshBtn").onclick = () => {
+    generateCaptcha();
+};
+
+document.getElementById("captchaInput").addEventListener("input", function() {
+    let val = this.value.toUpperCase();
+    let matchSoFar = captcha.toUpperCase().startsWith(val); // case-insensitive check
+    document.getElementById("error").textContent = matchSoFar ? "" : "Incorrect";
+});
+
+document.getElementById("verifyBtn").addEventListener("click", function() {
+    const val = document.getElementById("captchaInput").value.toUpperCase();
+    if (val !== captcha.toUpperCase()) {
+        document.getElementById("error").textContent = "Incorrect";
+        return;
+    }
+    document.getElementById("mainContent").classList.add("blurred");
+    document.getElementById("loader").style.display = "block";
+});
+</script>
+
+</body>
+</html>
