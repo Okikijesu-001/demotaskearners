@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Text Captcha</title>
+<style>
+  body {
+    margin: 0;
+    background: black;
+    color: white;
+    font-family: sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+  .captcha-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    width: 90%;
+    max-width: 400px;
+  }
+  .captcha-box {
+    background: white;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 80px;
+    border-radius: 8px;
+  }
+  .captcha-text {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: black;
+    white-space: nowrap;
+    width: 100%;
+    text-align: center;
+  }
+  .captcha-refresh {
+    cursor: pointer;
+    margin-left: 10px;
+    color: black;
+    font-weight: bold;
+    font-size: 1.2em;
+    user-select: none;
+  }
+  input {
+    padding: 10px;
+    width: 100%;
+    border: none;
+    border-radius: 8px;
+    font-size: 1em;
+    background: white;
+    color: black;
+    outline: none;
+  }
+  input[type="password"] {
+    font-family: Verdana;
+    letter-spacing: 2px;
+  }
+  .error-msg {
+    font-size: 0.85em;
+    color: red;
+    height: 1em;
+  }
+  .verify-btn {
+    padding: 10px;
+    width: 100%;
+    background: green;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    font-size: 1em;
+  }
+  .blurred {
+    filter: blur(5px);
+    pointer-events: none;
+  }
+  .loader-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0,0,0,0.4);
+    z-index: 10;
+  }
+  .loader {
+    position: relative;
+    width: 60px;
+    height: 60px;
+    animation: spin 1.5s linear infinite;
+  }
+  .dot {
+    width: 8px;
+    height: 8px;
+    background: green;
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform-origin: -20px 0;
+  }
+  .dot:nth-child(1) { transform: rotate(0deg) translateX(20px); }
+  .dot:nth-child(2) { transform: rotate(36deg) translateX(20px); }
+  .dot:nth-child(3) { transform: rotate(72deg) translateX(20px); }
+  .dot:nth-child(4) { transform: rotate(108deg) translateX(20px); }
+  .dot:nth-child(5) { transform: rotate(144deg) translateX(20px); }
+  .dot:nth-child(6) { transform: rotate(180deg) translateX(20px); }
+  .dot:nth-child(7) { transform: rotate(216deg) translateX(20px); }
+  .dot:nth-child(8) { transform: rotate(252deg) translateX(20px); }
+  .dot:nth-child(9) { transform: rotate(288deg) translateX(20px); }
+  .dot:nth-child(10) { transform: rotate(324deg) translateX(20px); }
+  @keyframes spin {
+    0% { transform: rotate(0); }
+    100% { transform: rotate(360deg); }
+  }
+</style>
+</head>
+<body>
+
+<div class="captcha-container" id="captchaContainer">
+  <div class="captcha-box">
+    <div class="captcha-text" id="captchaText"></div>
+    <div class="captcha-refresh" onclick="generateCaptcha()">⟳</div>
+  </div>
+  <input type="password" id="captchaInput" placeholder="Enter Captcha">
+  <div class="error-msg" id="errorMsg"></div>
+  <button class="verify-btn" onclick="verifyCaptcha()">Verify</button>
+</div>
+
+<div class="loader-overlay" id="loaderOverlay" style="display:none;">
+  <div class="loader">
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+  </div>
+</div>
+
+<script>
+const fonts = [
+  'Arial Black', 'Impact', 'Verdana', 'Courier New', 'Georgia', 'Tahoma',
+  'Times New Roman', 'Lucida Console', 'Trebuchet MS', 'Comic Sans MS'
+];
+const captchaList = [];
+const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+for (let i = 0; i < 100; i++) {
+  let length = Math.floor(Math.random() * 3) + 4;
+  let text = '';
+  for (let j = 0; j < length; j++) {
+    text += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  captchaList.push(text);
+}
+
+let currentCaptcha = '';
+
+function generateCaptcha() {
+  const captchaTextEl = document.getElementById('captchaText');
+  currentCaptcha = captchaList[Math.floor(Math.random() * captchaList.length)];
+  captchaTextEl.style.fontFamily = fonts[Math.floor(Math.random() * fonts.length)];
+  captchaTextEl.style.fontSize = '40px';
+  captchaTextEl.innerText = currentCaptcha;
+  document.getElementById('captchaInput').value = '';
+  document.getElementById('errorMsg').innerText = '';
+}
+
+function verifyCaptcha() {
+  const input = document.getElementById('captchaInput').value;
+  if (input !== currentCaptcha) {
+    document.getElementById('errorMsg').innerText = 'Incorrect';
+    return;
+  }
+  document.getElementById('captchaContainer').classList.add('blurred');
+  document.getElementById('loaderOverlay').style.display = 'flex';
+}
+
+generateCaptcha();
+</script>
+
+</body>
+</html>
